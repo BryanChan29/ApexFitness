@@ -3,7 +3,12 @@ CREATE TABLE users (
     id VARCHAR(50) PRIMARY KEY, 
     email VARCHAR(50) NOT NULL, 
     username VARCHAR(50) NOT NULL,
-    password VARCHAR(25) NOT NULL
+    password VARCHAR(25) NOT NULL,
+    current_weight INTEGER,
+    goal_weight INTEGER,
+    height INTEGER,
+    age INTEGER,
+    activity_level VARCHAR(25)
 );
 
 -- DailyFood Table
