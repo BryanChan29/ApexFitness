@@ -15,6 +15,7 @@ import DashboardIcon from '@mui/icons-material/Dashboard';
 import RestaurantMenuIcon from '@mui/icons-material/RestaurantMenu';
 import FitnessCenterIcon from '@mui/icons-material/FitnessCenter';
 import Dashboard from './progresspage/Dashboard';
+import FoodDash from './pages/FoodDash';
 
 // Placeholder pages
 function DashboardPage() {
@@ -113,6 +114,8 @@ function App() {
 
           <Routes>
             <Route path="/dashboard" element={<Dashboard />} />
+             {/* will merge below with dashboard later */}
+            <Route path="/food-dash" element={<FoodDash />} /> 
             <Route path="/meals" element={<MealsPage />} />
             <Route path="/workouts" element={<WorkoutsPage />} />
             <Route path="/" element={<DashboardPage />} />
