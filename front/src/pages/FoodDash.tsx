@@ -20,7 +20,7 @@ const SearchResultsSchema = z.object({
 type SearchResults = z.infer<typeof SearchResultsSchema>;
 type FoodItem = z.infer<typeof FoodItemSchema>;
 
-const Dashboard = () => {
+const FoodDash = () => {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchResults>({});
   const [showSearchButton, setShowSearchButton] = useState(false);
@@ -228,4 +228,4 @@ const Dashboard = () => {
   );
 };
 
-export default Dashboard;
+export default FoodDash;
