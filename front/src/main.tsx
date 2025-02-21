@@ -1,12 +1,11 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import './index.css';
-import SavedMeals from './Meals/SavedMeals.tsx';
-import MealPlan from './Meals/MealPlan.tsx';
+import App from './App.tsx';
 
-// TODO: set up router
+// TODO: setup router
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <SavedMeals />
+    <App />
   </StrictMode>
 );
