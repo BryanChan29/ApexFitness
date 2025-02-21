@@ -42,7 +42,6 @@ function App() {
         </Typography>
       </Toolbar>
       <List>
-
         <ListItemButton component={Link} to="/dashboard">
           <ListItemIcon>
             <DashboardIcon />
@@ -63,7 +62,6 @@ function App() {
           </ListItemIcon>
           <ListItemText primary="Workouts" />
         </ListItemButton>
-
       </List>
     </div>
   );
@@ -74,7 +72,10 @@ function App() {
         <CssBaseline />
 
         {/* Top AppBar */}
-        <AppBar position="fixed" sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}>
+        <AppBar
+          position="fixed"
+          sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}
+        >
           <Toolbar>
             <Typography variant="h6" noWrap component="div">
               Nutrition Tracker
@@ -88,7 +89,10 @@ function App() {
           sx={{
             width: drawerWidth,
             flexShrink: 0,
-            [`& .MuiDrawer-paper`]: { width: drawerWidth, boxSizing: 'border-box' },
+            [`& .MuiDrawer-paper`]: {
+              width: drawerWidth,
+              boxSizing: 'border-box',
+            },
           }}
           open
         >
