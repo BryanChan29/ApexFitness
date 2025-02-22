@@ -1,10 +1,12 @@
-import express, { Response, Request } from 'express';
+import express, { Response, Request, CookieOptions } from 'express';
 import sqlite3 from 'sqlite3';
 import { open } from 'sqlite';
 import * as url from 'url';
-import { DBDailyFoodItem } from '@apex/shared';
+import { DBDailyFoodItem, User } from '@apex/shared';
 import * as crypto from 'crypto';
+import cookieParser from 'cookie-parser';
 import axios from 'axios';
+import argon2 from 'argon2';
 
 const FATSECRET_CONSUMER_KEY = 'key_here';
 const FATSECRET_SHARED_SECRET = 'key_here';
@@ -21,6 +23,218 @@ const db = await open({
   driver: sqlite3.Database,
 });
 await db.get('PRAGMA foreign_keys = ON');
+
+const tokenStorage: { [key: string]: string } = {};
+function makeToken() {
+  return crypto.randomBytes(32).toString('hex');
+}
+
+function validateLogin(body: { email: string; password?: string }) {
+  return body.email && body.password !== undefined;
+}
+
+const cookieOptions: CookieOptions = {
+  httpOnly: true, // Prevent client-side JavaScript access
+  secure: true, // Secure only in production and Fly.io
+  sameSite: 'strict', // Prevent CSRF attacks
+};
+
+app.use(cookieParser());
+
+// Auth
+
+app.post('/api/register', async (req, res) => {
+  const { email, username, password } = req.body;
+
+  if (!validateLogin(req.body)) {
+    console.log('Invalid input:', req.body);
+    return res
+      .status(400)
+      .json({ error: 'Email, Username, and Password are required' });
+  }
+
+  // Parameterized query to prevent SQL injection
+  const existingUser = await db.get('SELECT * FROM users WHERE email = ?', [
+    email,
+  ]);
+  if (existingUser) {
+    return res.status(400).json({ error: 'Email already registered' });
+  }
+
+  // Generate a unique user ID (UUID)
+  const uid = crypto.randomUUID(); // Example: "550e8400-e29b-41d4-a716-446655440000"
+
+  // Hash the user password
+  let hash: string;
+  try {
+    hash = await argon2.hash(password);
+  } catch (error) {
+    console.log('Hashing failed', error);
+    return res.sendStatus(500);
+  }
+
+  // Insert the new user into the database
+  try {
+    const statement = await db.prepare(
+      'INSERT INTO users (id, email, username, password, current_weight, goal_weight, height, age, activity_level) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
+    );
+    await statement.run(
+      uid,
+      email,
+      username,
+      hash,
+      null,
+      null,
+      null,
+      null,
+      null
+    );
+
+    console.log('Inserted user:', uid);
+  } catch (error) {
+    console.log('Insert error:', error);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+
+  const token = makeToken();
+  tokenStorage[token] = email;
+
+  return res
+    .cookie('token', token, cookieOptions)
+    .json({ message: 'Signup successful', user_id: uid });
+});
+
+app.post('/api/login', async (req, res) => {
+  const { email, password } = req.body;
+
+  if (!validateLogin(req.body)) {
+    return res.sendStatus(400);
+  }
+
+  let result;
+  try {
+    result = await db.get('SELECT id, password FROM users WHERE email = ?', [
+      email,
+    ]);
+  } catch (error) {
+    console.error('Select failed', error);
+    return res.sendStatus(500);
+  }
+
+  if (!result) {
+    return res.sendStatus(404);
+  }
+
+  const hash = result.password;
+
+  let verifyResult;
+  try {
+    verifyResult = await argon2.verify(hash, password);
+  } catch (error) {
+    console.error('Verification failed', error);
+    return res.sendStatus(500);
+  }
+
+  if (!verifyResult) {
+    return res.sendStatus(400);
+  }
+
+  const token = makeToken();
+  tokenStorage[token] = email;
+  res.cookie('token', token, cookieOptions);
+
+  return res.json({
+    message: 'Login successful',
+    user: { email: email, id: result.id },
+  });
+});
+
+app.post('/api/logout', (req, res) => {
+  const { token } = req.cookies;
+  if (!token || !tokenStorage[token]) {
+    return res.sendStatus(400); // Already logged out or invalid token
+  }
+  delete tokenStorage[token];
+  return res
+    .clearCookie('token', cookieOptions)
+    .json({ message: 'Logout successful' });
+});
+
+app.put('/api/user', async (req: { body: User }, res) => {
+  const {
+    id, // Now a UUID instead of an integer
+    email,
+    username,
+    password,
+    current_weight,
+    goal_weight,
+    height,
+    age,
+    activity_level,
+  } = req.body;
+
+  const validateRequest = () => {
+    if (!req.body || Object.keys(req.body).length === 0) {
+      return 'ID, Email, Username, and Password are required';
+    }
+    if (!id) return 'User ID required';
+    if (!email) return 'Email required';
+    if (!username) return 'Username required';
+    if (!password) return 'Password required';
+    return null;
+  };
+
+  const validationError = validateRequest();
+  if (validationError) {
+    return res.status(400).json({ error: validationError });
+  }
+
+  try {
+    // Check if user exists
+    const existingUser = await db.get('SELECT * FROM users WHERE id = ?', [id]);
+    if (!existingUser) {
+      return res.status(404).json({ error: `No user found with ID ${id}` });
+    }
+
+    // Prepare the update query
+    const statement = await db.prepare(
+      `UPDATE users 
+       SET email = ?, username = ?, password = ?, current_weight = ?, goal_weight = ?, height = ?, age = ?, activity_level = ? 
+       WHERE id = ?`
+    );
+
+    await statement.run(
+      email,
+      username,
+      password,
+      current_weight,
+      goal_weight,
+      height,
+      age,
+      activity_level,
+      id
+    );
+
+    return res
+      .status(200)
+      .json({ message: `User ${id} updated successfully!` });
+  } catch (error) {
+    console.error('Error updating user:', error);
+    return res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
+app.get('/api/auth/check', (req, res) => {
+  const { token } = req.cookies; // Get the token from cookies
+
+  if (!token || !tokenStorage[token]) {
+    return res
+      .status(401)
+      .json({ loggedIn: false, error: 'Not authenticated' });
+  }
+
+  return res.json({ loggedIn: true });
+});
 
 requestRouter.get('/daily_food', async (req, res) => {
   // TODO: work on permissions, but for now just return everything in `daily_food` table
@@ -102,12 +316,20 @@ function generateOAuthSignature(url: string, method: string, params: any) {
   // Sort and encode parameters
   const sortedParams = Object.keys(allParams)
     .sort()
-    .map(key => `${encodeURIComponent(key)}=${encodeURIComponent(allParams[key])}`)
+    .map(
+      (key) =>
+        `${encodeURIComponent(key)}=${encodeURIComponent(allParams[key])}`
+    )
     .join('&');
 
-  const baseString = `${method.toUpperCase()}&${encodeURIComponent(url)}&${encodeURIComponent(sortedParams)}`;
+  const baseString = `${method.toUpperCase()}&${encodeURIComponent(
+    url
+  )}&${encodeURIComponent(sortedParams)}`;
   const signingKey = `${encodeURIComponent(FATSECRET_SHARED_SECRET)}&`;
-  const signature = crypto.createHmac('sha1', signingKey).update(baseString).digest('base64');
+  const signature = crypto
+    .createHmac('sha1', signingKey)
+    .update(baseString)
+    .digest('base64');
 
   return { ...oauthParams, oauth_signature: signature };
 }
@@ -123,7 +345,11 @@ app.get('/api/search-food', async (req: Request, res: Response) => {
       max_results: 10,
     };
 
-    const oauthParams = generateOAuthSignature(FATSECRET_API_URL, 'GET', params);
+    const oauthParams = generateOAuthSignature(
+      FATSECRET_API_URL,
+      'GET',
+      params
+    );
 
     const response = await axios.get(FATSECRET_API_URL, {
       params: { ...params, ...oauthParams },
@@ -146,7 +372,11 @@ app.get('/api/food-detail', async (req: Request, res: Response) => {
       format: 'json',
     };
 
-    const oauthParams = generateOAuthSignature(FATSECRET_API_URL, 'GET', params);
+    const oauthParams = generateOAuthSignature(
+      FATSECRET_API_URL,
+      'GET',
+      params
+    );
 
     const response = await axios.get(FATSECRET_API_URL, {
       params: { ...params, ...oauthParams },
