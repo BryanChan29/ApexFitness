@@ -1,4 +1,10 @@
-import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Link,
+  Navigate,
+} from 'react-router-dom';
 import {
   Box,
   CssBaseline,
@@ -10,18 +16,18 @@ import {
   ListItemButton,
   ListItemIcon,
   ListItemText,
+  CircularProgress,
 } from '@mui/material';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import RestaurantMenuIcon from '@mui/icons-material/RestaurantMenu';
 import FitnessCenterIcon from '@mui/icons-material/FitnessCenter';
 import Dashboard from './progresspage/Dashboard';
 import FoodDash from './pages/FoodDash';
+import LandingPage from './LandingPage/LandingPage';
+import LogoutButton from './components/LogoutButton';
+import { useAuth } from './LandingPage/authUtils';
 
 // Placeholder pages
-function DashboardPage() {
-  return <Typography variant="h4">Dashboard Content</Typography>;
-}
-
 function MealsPage() {
   return <Typography variant="h4">Meals Content</Typography>;
 }
@@ -34,94 +40,108 @@ function WorkoutsPage() {
 const drawerWidth = 240;
 
 function App() {
-  // Sidebar content
-  const drawer = (
-    <div>
-      <Toolbar>
-        <Typography variant="h6" noWrap>
-          My App
-        </Typography>
-      </Toolbar>
-      <List>
-        <ListItemButton component={Link} to="/dashboard">
-          <ListItemIcon>
-            <DashboardIcon />
-          </ListItemIcon>
-          <ListItemText primary="Dashboard" />
-        </ListItemButton>
+  const isAuthenticated = useAuth();
 
-        <ListItemButton component={Link} to="/meals">
-          <ListItemIcon>
-            <RestaurantMenuIcon />
-          </ListItemIcon>
-          <ListItemText primary="Meals" />
-        </ListItemButton>
-
-        <ListItemButton component={Link} to="/workouts">
-          <ListItemIcon>
-            <FitnessCenterIcon />
-          </ListItemIcon>
-          <ListItemText primary="Workouts" />
-        </ListItemButton>
-      </List>
-    </div>
-  );
+  if (isAuthenticated === null) {
+    return (
+      <Box
+        sx={{
+          height: '100vh',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+        }}
+      >
+        <CircularProgress />
+      </Box>
+    );
+  }
 
   return (
     <Router>
-      <Box sx={{ display: 'flex' }}>
-        <CssBaseline />
+      {/* If user is not authenticated, show only the Landing Page */}
+      {!isAuthenticated ? (
+        <LandingPage />
+      ) : (
+        <Box sx={{ display: 'flex' }}>
+          <CssBaseline />
 
-        {/* Top AppBar */}
-        <AppBar
-          position="fixed"
-          sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        >
-          <Toolbar>
-            <Typography variant="h6" noWrap component="div">
-              Nutrition Tracker
-            </Typography>
-          </Toolbar>
-        </AppBar>
+          {/* Top AppBar */}
+          <AppBar
+            position="fixed"
+            sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}
+          >
+            <Toolbar sx={{ display: 'flex', justifyContent: 'space-between' }}>
+              <Typography variant="h6" noWrap component="div">
+                Nutrition Tracker
+              </Typography>
+              <LogoutButton />
+            </Toolbar>
+          </AppBar>
 
-        {/* Permanent Sidebar Drawer */}
-        <Drawer
-          variant="permanent"
-          sx={{
-            width: drawerWidth,
-            flexShrink: 0,
-            [`& .MuiDrawer-paper`]: {
+          {/* Permanent Sidebar Drawer */}
+          <Drawer
+            variant="permanent"
+            sx={{
               width: drawerWidth,
-              boxSizing: 'border-box',
-            },
-          }}
-          open
-        >
-          {drawer}
-        </Drawer>
+              flexShrink: 0,
+              [`& .MuiDrawer-paper`]: {
+                width: drawerWidth,
+                boxSizing: 'border-box',
+              },
+            }}
+            open
+          >
+            <Toolbar>
+              <Typography variant="h6" noWrap>
+                My App
+              </Typography>
+            </Toolbar>
+            <List>
+              <ListItemButton component={Link} to="/dashboard">
+                <ListItemIcon>
+                  <DashboardIcon />
+                </ListItemIcon>
+                <ListItemText primary="Dashboard" />
+              </ListItemButton>
 
-        {/* Main Content */}
-        <Box
-          component="main"
-          sx={{
-            flexGrow: 1,
-            p: 3,
-            ml: `${drawerWidth}px`,
-          }}
-        >
-          {/* Add spacing so content starts below the AppBar */}
-          <Toolbar />
+              <ListItemButton component={Link} to="/meals">
+                <ListItemIcon>
+                  <RestaurantMenuIcon />
+                </ListItemIcon>
+                <ListItemText primary="Meals" />
+              </ListItemButton>
 
-          <Routes>
-            <Route path="/dashboard" element={<Dashboard />} />
-             {/* will merge below with dashboard later */}
-            <Route path="/food-dash" element={<FoodDash />} /> 
-            <Route path="/meals" element={<MealsPage />} />
-            <Route path="/workouts" element={<WorkoutsPage />} />
-            <Route path="/" element={<DashboardPage />} />
-          </Routes>
+              <ListItemButton component={Link} to="/workouts">
+                <ListItemIcon>
+                  <FitnessCenterIcon />
+                </ListItemIcon>
+                <ListItemText primary="Workouts" />
+              </ListItemButton>
+            </List>
+          </Drawer>
+
+          {/* Main Content */}
+          <Box
+            component="main"
+            sx={{
+              flexGrow: 1,
+              p: 3,
+              ml: `${drawerWidth}px`,
+            }}
+          >
+            <Toolbar />
+            <Routes>
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/food-dash" element={<FoodDash />} />
+              <Route path="/meals" element={<MealsPage />} />
+              <Route path="/workouts" element={<WorkoutsPage />} />
+              {/* Redirect to Dashboard if user is logged in */}
+              <Route path="*" element={<Navigate to="/dashboard" />} />
+            </Routes>
+          </Box>
         </Box>
-      </Box>
+      )}
     </Router>
   );
 }
