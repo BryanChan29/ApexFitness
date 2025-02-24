@@ -7,9 +7,27 @@ import * as crypto from 'crypto';
 import cookieParser from 'cookie-parser';
 import axios from 'axios';
 import argon2 from 'argon2';
+import * as dotenv from 'dotenv';
+import path from 'path';
 
-const FATSECRET_CONSUMER_KEY = 'key_here';
-const FATSECRET_SHARED_SECRET = 'key_here';
+const __filename = url.fileURLToPath(import.meta.url);
+const __curr_dirname = path.dirname(__filename);
+
+dotenv.config({ path: path.resolve(__curr_dirname, '../../.env') });
+
+if (
+  !process.env.FATSECRET_CONSUMER_KEY ||
+  !process.env.FATSECRET_SHARED_SECRET
+) {
+  throw new Error(
+    'FATSECRET_CONSUMER_KEY and/or FATSECRET_SHARED_SECRET is not defined in .env file'
+  );
+}
+
+// * Force as string so that it can be typed properly.
+// * Should be empty string
+const FATSECRET_CONSUMER_KEY = process.env.FATSECRET_CONSUMER_KEY as string;
+const FATSECRET_SHARED_SECRET = process.env.FATSECRET_SHARED_SECRET as string;
 const FATSECRET_API_URL = 'https://platform.fatsecret.com/rest/server.api';
 
 let app = express();
