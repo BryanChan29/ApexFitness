@@ -9,6 +9,15 @@ INSERT INTO daily_food (id, user_id, meal_type, name, calories, carbs, fat, prot
 (2, 'user1', 'lunch', 'Soup and sandwich meal', 567, 10, 14, 56, 1400, 3);
 
 -- Meal one solely consists of the chicken stir fry dish
-INSERT INTO meals (id, date, saved_meal) VALUES(1, '02/18/2025', false);
-INSERT INTO meal_items (meal_id, food_id) VALUES(1, 1);
+INSERT INTO meals (id, date, saved_meal) VALUES(10, '02/18/2025', false);
+INSERT INTO meal_items (meal_id, food_id) VALUES(10, 1);
+
+INSERT INTO meals (id, date, saved_meal) VALUES(11, '02/18/2025', false);
+INSERT INTO meal_items (meal_id, food_id) VALUES(11, 2);
+
+INSERT INTO meal_plans (id, is_private) VALUES(100, 1);
+
+INSERT INTO meal_plan_items (meal_plan_id, meal_id) VALUES 
+(100, 10),
+(100, 11);
 

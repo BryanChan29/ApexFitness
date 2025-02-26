@@ -30,11 +30,6 @@ import WorkoutPage from './workouts/Workout';
 import SavedMeals from './Meals/SavedMeals';
 import MealPlan from './Meals/MealPlan';
 
-// Placeholder pages
-function MealsPage() {
-  return <Typography variant="h4">Meals Content</Typography>;
-}
-
 // Drawer width
 const drawerWidth = 240;
 

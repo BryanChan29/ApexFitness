@@ -272,18 +272,28 @@ requestRouter.get('/daily_food', async (req, res) => {
 });
 
 requestRouter.get('/meal_plan/:id', async (req, res) => {
-  // TODO: work on permissions, but for now just return everything in `daily_food` table
+  // TODO: work on permissions
   let result: DBDailyFoodItem[];
-  // ? Do an inner join, first get all meals associated with the meal plan
-  // ? Then do another inner join, get all daily foods associated with each meal
-  // ? then return..?
+
+  const mealPlanId = parseInt(req.params.id, 10);
+  if (isNaN(mealPlanId)) {
+    return res.status(400).json({ error: 'Invalid Meal Id' });
+  }
+  const query = `
+  SELECT df.*
+  FROM daily_food df
+  JOIN meal_items mi ON df.id = mi.food_id
+  JOIN meals m ON mi.meal_id = m.id
+  JOIN meal_plan_items mpi ON m.id = mpi.meal_id
+  WHERE mpi.meal_plan_id = ?;`;
   try {
-    result = await db.all('SELECT * FROM daily_food');
+    result = await db.all(query, [mealPlanId]);
     if (result.length === 0) {
       return res.status(404).json({ error: 'No meals found' });
     }
   } catch (err) {
     const error = err as object;
+    console.log(error);
     return res.status(500).json({ error: error.toString() });
   }
 
@@ -291,7 +301,7 @@ requestRouter.get('/meal_plan/:id', async (req, res) => {
 });
 
 requestRouter.get('/meals/:id', async (req, res) => {
-  // TODO: work on permissions, but for now just return everything in `daily_food` table
+  // TODO: work on permissions
   // ! This route might not actually be valid... Made this just to test meals/inner joins
   let result: DBDailyFoodItem[];
   const mealId = parseInt(req.params.id, 10);
@@ -306,7 +316,6 @@ requestRouter.get('/meals/:id', async (req, res) => {
     INNER JOIN meals m ON mi.meal_id = m.id
     WHERE m.id = ?;
   `;
-
   try {
     result = await db.all(query, [mealId]);
     if (result.length === 0) {
