@@ -1,0 +1,66 @@
+
+/* Paper container styling */
+.weightMetricsPaper {
+    padding: 32px;           /* Equivalent to theme.spacing(4) if spacing unit is 8px */
+    max-width: 600px;
+    margin: 32px auto 0;      /* mt: 4, mx: auto */
+  }
+
+  /* Container for each weight circle */
+  .weightCircleContainer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    margin-bottom: 16px;
+  }
+
+  /* Label above the weight circle */
+  .weightCircleLabel {
+    margin-bottom: 16px;
+    font-weight: 500;
+  }
+
+  /* Weight circle styling */
+  .weightCircle {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 0px 3px 3px rgba(0, 0, 0, 0.2);
+    transition: all 0.3s ease;
+  }
+
+  /* Weight number inside the circle */
+  .weightCircleText {
+    color: white;
+    font-weight: bold;
+    font-size: 2rem;
+  }
+
+  /* 'lbs' label below the circle */
+  .weightCircleLbs {
+    margin-top: 8px;
+    color: rgba(0, 0, 0, 0.6);
+  }
+
+  /* Container for the button in display mode */
+  .metricsButtonContainer {
+    display: flex;
+    justify-content: center;
+    margin-top: 32px;
+  }
+
+  /* Form container when editing */
+  .editingForm {
+    margin-top: 16px;
+  }
+
+  /* Button container for Cancel/Save buttons in editing mode */
+  .editingButtonContainer {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 16px;
+  }
