@@ -255,23 +255,27 @@ app.get('/api/auth/check', (req, res) => {
 });
 
 app.post('/api/meal_plan', async (req, res) => {
-  const { isPrivate } = req.body;
+  console.log('body:' + JSON.stringify(req.body));
+  const { name, isPrivate } = req.body;
   const validateRequest = () => {
-    if (!req.body || Object.keys(req.body).length === 0) {
+    if (!req.body || Object.keys(req.body).length === 0)
+      return 'Name and isPrivate required';
+    if (isPrivate === undefined || isPrivate === null)
       return 'isPrivate required';
-    }
+    if (!name) return 'Name required';
     return null;
   };
 
   const validationError = validateRequest();
   if (validationError) {
+    console.log(validationError);
     return res.status(400).json({ error: validationError });
   }
   try {
     const statement = await db.prepare(
-      'INSERT INTO meal_plans (is_private) VALUES (?)'
+      'INSERT INTO meal_plans (name, is_private) VALUES (?, ?)'
     );
-    const result = await statement.run(isPrivate);
+    const result = await statement.run(name, isPrivate);
 
     console.log('Inserted Meal Plan ID:', result.lastID);
     return res.json({
@@ -285,14 +289,16 @@ app.post('/api/meal_plan', async (req, res) => {
 });
 
 app.put('/api/meal_plan', async (req, res) => {
-  const { id, isPrivate } = req.body;
+  const { id, name, isPrivate } = req.body;
 
   const validateRequest = () => {
     if (!req.body || Object.keys(req.body).length === 0) {
-      return 'Meal Plan ID and isPrivate are required';
+      return 'Meal Plan ID, Name and isPrivate values are required';
     }
     if (!id) return 'Meal Plan ID required';
-    if (!isPrivate) return 'isPrivate required';
+    if (!name) return 'Meal Plan Name required';
+    if (isPrivate === undefined || isPrivate === null)
+      return 'isPrivate required';
     return null;
   };
 
@@ -316,11 +322,11 @@ app.put('/api/meal_plan', async (req, res) => {
     // Prepare the update query
     const statement = await db.prepare(
       `UPDATE meal_plans 
-       SET is_private = ? 
+       SET name = ?, is_private = ? 
        WHERE id = ?`
     );
 
-    await statement.run(isPrivate, id);
+    await statement.run(name, isPrivate, id);
 
     return res
       .status(200)
