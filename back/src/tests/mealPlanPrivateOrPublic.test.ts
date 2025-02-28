@@ -45,6 +45,7 @@ afterAll(async () => {
 describe('Meal Plan API', () => {
   test('POST /meal_plan - Create meal plan successfully', async () => {
     const response = await axios.post(`${baseUrl}/meal_plan`, {
+      name: 'Weekly Plan',
       isPrivate: true,
     });
 
@@ -53,20 +54,31 @@ describe('Meal Plan API', () => {
     expect(response.data.mealID).toBeDefined();
   });
 
-  test('POST /meal_plan - Fail to create meal plan with missing isPrivate field', async () => {
+  test('POST /meal_plan - Fail to create meal plan with missing fields', async () => {
+    try {
+      await axios.post(`${baseUrl}/meal_plan`, { isPrivate: true });
+    } catch (error) {
+      const caughtError = error as AxiosError;
+      expect(caughtError.response?.status).toBe(400);
+      expect(caughtError.response?.data).toEqual({ error: 'Name required' });
+    }
+  });
+
+  test('POST /meal_plan - Fail to create meal plan with no request body', async () => {
     try {
       await axios.post(`${baseUrl}/meal_plan`, {});
     } catch (error) {
       const caughtError = error as AxiosError;
       expect(caughtError.response?.status).toBe(400);
       expect(caughtError.response?.data).toEqual({
-        error: 'isPrivate required',
+        error: 'Name and isPrivate required',
       });
     }
   });
 
   test('PUT /meal_plan - Update meal plan successfully', async () => {
     const createRes = await axios.post(`${baseUrl}/meal_plan`, {
+      name: 'Weekly Plan',
       isPrivate: false,
     });
 
@@ -77,6 +89,7 @@ describe('Meal Plan API', () => {
 
     const updateRes = await axios.put(`${baseUrl}/meal_plan`, {
       id: mealId,
+      name: 'Updated Weekly Plan',
       isPrivate: true,
     });
 
@@ -90,6 +103,7 @@ describe('Meal Plan API', () => {
     try {
       await axios.put(`${baseUrl}/meal_plan`, {
         id: '1', // Fake UUID
+        name: 'Non-Existent Plan',
         isPrivate: true,
       });
     } catch (error) {
@@ -103,6 +117,7 @@ describe('Meal Plan API', () => {
 
   test('PUT /meal_plan - Fail to update with missing fields', async () => {
     const createRes = await axios.post(`${baseUrl}/meal_plan`, {
+      name: 'Weekly Plan',
       isPrivate: false,
     });
 
@@ -115,13 +130,14 @@ describe('Meal Plan API', () => {
       const caughtError = error as AxiosError;
       expect(caughtError.response?.status).toBe(400);
       expect(caughtError.response?.data).toEqual({
-        error: 'Meal Plan ID and isPrivate are required',
+        error: 'Meal Plan ID, Name and isPrivate values are required',
       });
     }
   });
 
-  test('PUT /meal_plan - Fail to update with missing fields', async () => {
+  test('PUT /meal_plan - Fail to update with missing Meal Plan ID', async () => {
     const createRes = await axios.post(`${baseUrl}/meal_plan`, {
+      name: 'Weekly Plan',
       isPrivate: false,
     });
 
@@ -130,6 +146,7 @@ describe('Meal Plan API', () => {
 
     try {
       await axios.put(`${baseUrl}/meal_plan`, {
+        name: 'Updated Weekly Plan',
         isPrivate: true,
       });
     } catch (error) {
@@ -141,8 +158,9 @@ describe('Meal Plan API', () => {
     }
   });
 
-  test('PUT /meal_plan - Fail to update with missing fields', async () => {
+  test('PUT /meal_plan - Fail to update with missing name', async () => {
     const createRes = await axios.post(`${baseUrl}/meal_plan`, {
+      name: 'Weekly Plan',
       isPrivate: false,
     });
 
@@ -153,6 +171,31 @@ describe('Meal Plan API', () => {
     try {
       await axios.put(`${baseUrl}/meal_plan`, {
         id: mealId,
+        isPrivate: true,
+      });
+    } catch (error) {
+      const caughtError = error as AxiosError;
+      expect(caughtError.response?.status).toBe(400);
+      expect(caughtError.response?.data).toEqual({
+        error: 'Meal Plan Name required',
+      });
+    }
+  });
+
+  test('PUT /meal_plan - Fail to update with missing isPrivate field', async () => {
+    const createRes = await axios.post(`${baseUrl}/meal_plan`, {
+      name: 'Weekly Plan',
+      isPrivate: false,
+    });
+
+    expect(createRes.status).toBe(200);
+    expect(createRes.data.mealID).toBeDefined();
+    const mealId = createRes.data.mealID;
+
+    try {
+      await axios.put(`${baseUrl}/meal_plan`, {
+        id: mealId,
+        name: 'Updated Weekly Plan',
       });
     } catch (error) {
       const caughtError = error as AxiosError;
