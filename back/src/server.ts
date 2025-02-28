@@ -7,9 +7,27 @@ import * as crypto from 'crypto';
 import cookieParser from 'cookie-parser';
 import axios from 'axios';
 import argon2 from 'argon2';
+import * as dotenv from 'dotenv';
+import path from 'path';
 
-const FATSECRET_CONSUMER_KEY = 'key_here';
-const FATSECRET_SHARED_SECRET = 'key_here';
+const __filename = url.fileURLToPath(import.meta.url);
+const __curr_dirname = path.dirname(__filename);
+
+dotenv.config({ path: path.resolve(__curr_dirname, '../../.env') });
+
+if (
+  !process.env.FATSECRET_CONSUMER_KEY ||
+  !process.env.FATSECRET_SHARED_SECRET
+) {
+  throw new Error(
+    'FATSECRET_CONSUMER_KEY and/or FATSECRET_SHARED_SECRET is not defined in .env file'
+  );
+}
+
+// * Force as string so that it can be typed properly.
+// * Should be empty string
+const FATSECRET_CONSUMER_KEY = process.env.FATSECRET_CONSUMER_KEY as string;
+const FATSECRET_SHARED_SECRET = process.env.FATSECRET_SHARED_SECRET as string;
 const FATSECRET_API_URL = 'https://platform.fatsecret.com/rest/server.api';
 
 let app = express();
@@ -234,6 +252,89 @@ app.get('/api/auth/check', (req, res) => {
   }
 
   return res.json({ loggedIn: true });
+});
+
+app.post('/api/meal_plan', async (req, res) => {
+  console.log('body:' + JSON.stringify(req.body));
+  const { name, isPrivate } = req.body;
+  const validateRequest = () => {
+    if (!req.body || Object.keys(req.body).length === 0)
+      return 'Name and isPrivate required';
+    if (isPrivate === undefined || isPrivate === null)
+      return 'isPrivate required';
+    if (!name) return 'Name required';
+    return null;
+  };
+
+  const validationError = validateRequest();
+  if (validationError) {
+    console.log(validationError);
+    return res.status(400).json({ error: validationError });
+  }
+  try {
+    const statement = await db.prepare(
+      'INSERT INTO meal_plans (name, is_private) VALUES (?, ?)'
+    );
+    const result = await statement.run(name, isPrivate);
+
+    console.log('Inserted Meal Plan ID:', result.lastID);
+    return res.json({
+      message: 'Meal plan created successful',
+      mealID: result.lastID,
+    });
+  } catch (error) {
+    console.log('Insert error:', error);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.put('/api/meal_plan', async (req, res) => {
+  const { id, name, isPrivate } = req.body;
+
+  const validateRequest = () => {
+    if (!req.body || Object.keys(req.body).length === 0) {
+      return 'Meal Plan ID, Name and isPrivate values are required';
+    }
+    if (!id) return 'Meal Plan ID required';
+    if (!name) return 'Meal Plan Name required';
+    if (isPrivate === undefined || isPrivate === null)
+      return 'isPrivate required';
+    return null;
+  };
+
+  const validationError = validateRequest();
+  if (validationError) {
+    return res.status(400).json({ error: validationError });
+  }
+
+  try {
+    // Check if user exists
+    const existingMealPlan = await db.get(
+      'SELECT * FROM meal_plans WHERE id = ?',
+      [id]
+    );
+    if (!existingMealPlan) {
+      return res
+        .status(404)
+        .json({ error: `No meal plan found with ID ${id}` });
+    }
+
+    // Prepare the update query
+    const statement = await db.prepare(
+      `UPDATE meal_plans 
+       SET name = ?, is_private = ? 
+       WHERE id = ?`
+    );
+
+    await statement.run(name, isPrivate, id);
+
+    return res
+      .status(200)
+      .json({ message: `Meal Plan ${id} updated successfully!` });
+  } catch (error) {
+    console.error('Error updating meal plan:', error);
+    return res.status(500).json({ error: 'Internal Server Error' });
+  }
 });
 
 requestRouter.get('/daily_food', async (req, res) => {
