@@ -27,8 +27,8 @@ import LandingPage from './LandingPage/LandingPage';
 import LogoutButton from './components/LogoutButton';
 import { useAuth } from './LandingPage/authUtils';
 import WorkoutPage from './workouts/Workout';
-import SavedMeals from './Meals/SavedMeals';
 import MealPlan from './Meals/MealPlan';
+import { AccessDenied, NotFound } from './components/error';
 
 // Drawer width
 const drawerWidth = 240;
@@ -132,6 +132,12 @@ function App() {
               <Route path="/workouts" element={<WorkoutPage />} />
               {/* Redirect to Dashboard if user is logged in */}
               <Route path="*" element={<Navigate to="/dashboard" />} />
+
+              {/* Access Denied Route */}
+              <Route path="/access-denied" element={<AccessDenied />} />
+
+              {/* 404 Not Found Page */}
+              <Route path="/not-found" element={<NotFound />} />
             </Routes>
           </Box>
         </Box>

@@ -254,6 +254,83 @@ app.get('/api/auth/check', (req, res) => {
   return res.json({ loggedIn: true });
 });
 
+app.post('/api/meal_plan', async (req, res) => {
+  const { isPrivate } = req.body;
+  const validateRequest = () => {
+    if (!req.body || Object.keys(req.body).length === 0) {
+      return 'isPrivate required';
+    }
+    return null;
+  };
+
+  const validationError = validateRequest();
+  if (validationError) {
+    return res.status(400).json({ error: validationError });
+  }
+  try {
+    const statement = await db.prepare(
+      'INSERT INTO meal_plans (is_private) VALUES (?)'
+    );
+    const result = await statement.run(isPrivate);
+
+    console.log('Inserted Meal Plan ID:', result.lastID);
+    return res.json({
+      message: 'Meal plan created successful',
+      mealID: result.lastID,
+    });
+  } catch (error) {
+    console.log('Insert error:', error);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.put('/api/meal_plan', async (req, res) => {
+  const { id, isPrivate } = req.body;
+
+  const validateRequest = () => {
+    if (!req.body || Object.keys(req.body).length === 0) {
+      return 'Meal Plan ID and isPrivate are required';
+    }
+    if (!id) return 'Meal Plan ID required';
+    if (!isPrivate) return 'isPrivate required';
+    return null;
+  };
+
+  const validationError = validateRequest();
+  if (validationError) {
+    return res.status(400).json({ error: validationError });
+  }
+
+  try {
+    // Check if user exists
+    const existingMealPlan = await db.get(
+      'SELECT * FROM meal_plans WHERE id = ?',
+      [id]
+    );
+    if (!existingMealPlan) {
+      return res
+        .status(404)
+        .json({ error: `No meal plan found with ID ${id}` });
+    }
+
+    // Prepare the update query
+    const statement = await db.prepare(
+      `UPDATE meal_plans 
+       SET is_private = ? 
+       WHERE id = ?`
+    );
+
+    await statement.run(isPrivate, id);
+
+    return res
+      .status(200)
+      .json({ message: `Meal Plan ${id} updated successfully!` });
+  } catch (error) {
+    console.error('Error updating meal plan:', error);
+    return res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
 requestRouter.get('/daily_food', async (req, res) => {
   // TODO: work on permissions, but for now just return everything in `daily_food` table
   let result: DBDailyFoodItem[];
