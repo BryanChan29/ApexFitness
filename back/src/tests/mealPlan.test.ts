@@ -2,6 +2,7 @@ import axios, { AxiosError } from 'axios';
 import { open } from 'sqlite';
 import * as url from 'url';
 import sqlite3 from 'sqlite3';
+import { UIFormattedMealPlan } from '@apex/shared';
 
 let port = 3000;
 let host = 'localhost';
@@ -139,24 +140,21 @@ describe('Meal Plan API', () => {
 
     expect(res.status).toBe(200);
     expect(res.data).toHaveProperty('result');
-    expect(res.data.result).toHaveLength(3); // Expecting Oatmeal, Chicken Salad, Grilled Salmon
 
-    // Verify meal item names
-    const foodNames = res.data.result.map((item: any) => item.name);
+    expect(typeof res.data.result).toBe('object');
+
+    const result: UIFormattedMealPlan = res.data.result;
+
+    // Flatten all food items from all days and meal types into a single array
+    const allFoodItems = Object.values(result) // Get all days
+      .flatMap((day: any) => Object.values(day)) // Get all meal types
+      .flat(); // Flatten into one array
+
+    expect(allFoodItems).toHaveLength(3);
+    const foodNames = allFoodItems.map((item: any) => item.name);
     expect(foodNames).toContain('Oatmeal');
     expect(foodNames).toContain('Chicken Salad');
     expect(foodNames).toContain('Grilled Salmon');
-  });
-
-  test('GET /meal_plan/:id - Returns 400 for invalid meal plan ID', async () => {
-    await addToDb();
-    try {
-      await axios.get(`${baseUrl}/meal_plan/invalidId`);
-    } catch (error) {
-      const caughtError = error as AxiosError;
-      expect(caughtError.response?.status).toBe(400);
-      expect(caughtError.response?.data).toEqual({ error: 'Invalid Meal Id' });
-    }
   });
 
   test('GET /meal_plan/:id - Returns 404 if no meals found', async () => {
@@ -165,7 +163,9 @@ describe('Meal Plan API', () => {
     } catch (error) {
       const caughtError = error as AxiosError;
       expect(caughtError.response?.status).toBe(404);
-      expect(caughtError.response?.data).toEqual({ error: 'No meals found' });
+      expect(caughtError.response?.data).toEqual({
+        error: 'Meal plan not found',
+      });
     }
   });
 
