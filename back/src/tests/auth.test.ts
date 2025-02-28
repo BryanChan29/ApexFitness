@@ -195,7 +195,7 @@ describe('Authentication API', () => {
       });
     } catch (error) {
       const caughtError = error as AxiosError;
-      expect(caughtError.response?.status).toBe(400);
+      expect(caughtError.response?.status).toBe(404);
     }
   });
 

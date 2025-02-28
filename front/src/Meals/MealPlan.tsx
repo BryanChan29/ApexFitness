@@ -1,201 +1,70 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import {
-  Card,
-  CardContent,
   Typography,
-  Grid2 as Grid,
-  IconButton,
   Button,
   Table,
   TableRow,
   TableCell,
   Paper,
+  TableContainer,
+  TableHead,
+  TableBody,
+  List,
+  ListItem,
+  Switch,
 } from '@mui/material';
-import AddCircleIcon from '@mui/icons-material/AddCircle';
-import DeleteIcon from '@mui/icons-material/Delete';
 import {
-  DBDailyFoodItem,
-  UIFormattedDailyFoodItem,
+  UIDailyMeal,
   UIFormattedMealPlan,
-  formatMeal,
+  mockBreakfast,
+  mockLunch,
+  mockDinner,
+  mockSnack,
 } from '@apex/shared';
-import axios from 'axios';
 import './SavedMeals.css';
 
 const sampleMealPlan: UIFormattedMealPlan = {
   monday: {
-    breakfast: [
-      {
-        name: 'Oatmeal with Bananas',
-        meal_type: 'breakfast',
-        calories: '300 cal',
-        carbs: '45g',
-        fat: '5g',
-        protein: '10g',
-        sodium: '200mg',
-        sugar: '15g',
-      },
-    ],
-    lunch: [
-      {
-        name: 'Chicken Caesar Salad',
-        meal_type: 'lunch',
-        calories: '450 cal',
-        carbs: '30g',
-        fat: '20g',
-        protein: '35g',
-        sodium: '800mg',
-        sugar: '5g',
-      },
-    ],
-    dinner: [
-      {
-        name: 'Grilled Salmon with Quinoa',
-        meal_type: 'dinner',
-        calories: '600 cal',
-        carbs: '40g',
-        fat: '25g',
-        protein: '50g',
-        sodium: '700mg',
-        sugar: '2g',
-      },
-    ],
-    snack: [
-      {
-        name: 'Greek Yogurt with Berries',
-        meal_type: 'snack',
-        calories: '200 cal',
-        carbs: '30g',
-        fat: '3g',
-        protein: '15g',
-        sodium: '100mg',
-        sugar: '20g',
-      },
-    ],
+    breakfast: [mockBreakfast[0], mockBreakfast[1]],
+    lunch: [mockLunch[0]],
+    dinner: [mockDinner[5]],
+    snack: [mockSnack[0]],
   },
   tuesday: {
-    breakfast: [
-      {
-        name: 'Avocado Toast with Egg',
-        meal_type: 'breakfast',
-        calories: '350 cal',
-        carbs: '40g',
-        fat: '15g',
-        protein: '12g',
-        sodium: '250mg',
-        sugar: '3g',
-      },
-    ],
-    lunch: [
-      {
-        name: 'Turkey Sandwich',
-        meal_type: 'lunch',
-        calories: '500 cal',
-        carbs: '55g',
-        fat: '10g',
-        protein: '30g',
-        sodium: '900mg',
-        sugar: '4g',
-      },
-    ],
-    dinner: [
-      {
-        name: 'Spaghetti with Meatballs',
-        meal_type: 'dinner',
-        calories: '650 cal',
-        carbs: '70g',
-        fat: '20g',
-        protein: '35g',
-        sodium: '1000mg',
-        sugar: '6g',
-      },
-    ],
-    snack: [
-      {
-        name: 'Mixed Nuts',
-        meal_type: 'snack',
-        calories: '250 cal',
-        carbs: '15g',
-        fat: '20g',
-        protein: '5g',
-        sodium: '150mg',
-        sugar: '2g',
-      },
-    ],
+    breakfast: [mockBreakfast[1], mockBreakfast[4]],
+    lunch: [mockLunch[1]],
+    dinner: [mockDinner[4]],
+    snack: [mockSnack[1]],
   },
   wednesday: {
-    breakfast: [
-      {
-        name: 'Smoothie with Protein Powder',
-        meal_type: 'breakfast',
-        calories: '400 cal',
-        carbs: '60g',
-        fat: '5g',
-        protein: '25g',
-        sodium: '300mg',
-        sugar: '35g',
-      },
-    ],
-    lunch: [
-      {
-        name: 'Chicken Wrap with Veggies',
-        meal_type: 'lunch',
-        calories: '550 cal',
-        carbs: '50g',
-        fat: '15g',
-        protein: '35g',
-        sodium: '850mg',
-        sugar: '4g',
-      },
-    ],
-    dinner: [
-      {
-        name: 'Beef Stir-fry with Rice',
-        meal_type: 'dinner',
-        calories: '700 cal',
-        carbs: '65g',
-        fat: '18g',
-        protein: '45g',
-        sodium: '1100mg',
-        sugar: '5g',
-      },
-    ],
-    snack: [
-      {
-        name: 'Apple with Peanut Butter',
-        meal_type: 'snack',
-        calories: '300 cal',
-        carbs: '40g',
-        fat: '10g',
-        protein: '7g',
-        sodium: '120mg',
-        sugar: '30g',
-      },
-    ],
+    breakfast: [mockBreakfast[3]],
+    lunch: [mockLunch[2]],
+    dinner: [mockDinner[1]],
+    snack: [mockSnack[2]],
   },
   thursday: {
-    breakfast: [],
-    lunch: [],
-    dinner: [],
-    snack: [],
+    breakfast: [mockBreakfast[2]],
+    lunch: [mockLunch[3]],
+    dinner: [mockDinner[3]],
+    snack: [mockSnack[3]],
   },
   friday: {
-    breakfast: [],
-    lunch: [],
-    dinner: [],
-    snack: [],
+    breakfast: [mockBreakfast[6]],
+    lunch: [mockLunch[4]],
+    dinner: [mockDinner[3]],
+    snack: [mockSnack[4]],
   },
   saturday: {
-    breakfast: [],
-    lunch: [],
-    dinner: [],
-    snack: [],
+    breakfast: [mockBreakfast[0], mockBreakfast[2]],
+    lunch: [mockLunch[5]],
+    dinner: [mockDinner[2]],
+    snack: [mockSnack[0]],
   },
   sunday: {
-    breakfast: [],
-    lunch: [],
-    dinner: [],
-    snack: [],
+    breakfast: [mockBreakfast[5]],
+    lunch: [mockLunch[6]],
+    dinner: [mockDinner[0]],
+    snack: [mockSnack[1]],
   },
 };
 
@@ -212,29 +81,117 @@ function MealPlan() {
   // ? then... return an object or 2d array in the format:
   // ? Breakfast: {[day_1meal, day2_meal, ...]}
   // ? But then... need to grab all food items from each meal, and display?
+  // Function to transpose meal plan data into a row-first format
+
+  const [isPublic, setIsPublic] = useState<boolean>(false);
+
+  function handlePublicModifier(
+    event: React.ChangeEvent<HTMLInputElement>
+  ): void {
+    setIsPublic(event.target.checked);
+    console.log(isPublic);
+  }
+
+  const formatMealPlan = (mealPlan: UIFormattedMealPlan) => {
+    const days = Object.keys(mealPlan) as Array<keyof UIFormattedMealPlan>;
+    const mealTypes: Array<keyof UIDailyMeal> = [
+      'breakfast',
+      'lunch',
+      'dinner',
+      'snack',
+    ];
+
+    // * Returns an array of food names, so that we can later format with List
+    return mealTypes.map((mealType) => ({
+      mealType,
+      meals: days.map(
+        (day) => mealPlan[day][mealType]?.flatMap((meal) => meal.name) || []
+      ),
+    }));
+  };
+
+  const formattedMeals = formatMealPlan(sampleMealPlan);
+  const days = Object.keys(sampleMealPlan).map(
+    (day) => day.charAt(0).toUpperCase() + day.slice(1)
+  ); // * ['Monday', 'Tuesday', ..., 'Sunday']
+
+  function shareMealPlan(): void {
+    // TODO: not implemented yet
+    console.log('Not yet implemented');
+  }
 
   return (
     <div style={{ padding: '20px' }}>
-      <Typography variant="h4">Meal Plan</Typography>
-      <Table component={Paper}>
-        <TableRow>
-          <TableCell>Header 1</TableCell>
-          <TableCell>Cell 1</TableCell>
-          <TableCell> Hello</TableCell>
-        </TableRow>
-        <TableRow>
-          <TableCell>Header 1</TableCell>
-          <TableCell>Cell 2</TableCell>
-          <TableCell> Hello</TableCell>
-        </TableRow>
-      </Table>
+      <Typography variant="h4" gutterBottom>
+        Meal Plan
+      </Typography>
+      <TableContainer component={Paper}>
+        <Table>
+          <TableHead>
+            <TableRow>
+              <TableCell>
+                <strong>Meal Type</strong>
+              </TableCell>
+              {days.map((day) => (
+                <TableCell key={day} align="center">
+                  <strong>{day}</strong>
+                </TableCell>
+              ))}
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {formattedMeals.map((row) => (
+              <TableRow key={row.mealType}>
+                <TableCell>
+                  <strong>
+                    {row.mealType.charAt(0).toUpperCase() +
+                      row.mealType.slice(1)}
+                  </strong>
+                </TableCell>
+                {row.meals.map((meals, index) => (
+                  <TableCell key={index} align="center">
+                    {meals.length > 0 ? (
+                      <List
+                        style={{ paddingLeft: '15px', margin: 0 }}
+                        sx={{ listStyleType: 'disc' }}
+                      >
+                        {meals.map((meal, idx) => (
+                          <ListItem key={idx} sx={{ display: 'list-item' }}>
+                            {meal}
+                          </ListItem> // Render as a bullet point
+                        ))}
+                      </List>
+                    ) : (
+                      '-' // ? Note to self: Just so we can keep a dash when there is nothing logged
+                    )}
+                  </TableCell>
+                ))}
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+        <div>
+          <Typography variant="h6">Public Visibility</Typography>
+          <Switch
+            checked={isPublic}
+            onChange={handlePublicModifier}
+            inputProps={{ 'aria-label': 'controlled' }}
+          />
+          <Button
+            variant="contained"
+            style={{ marginBottom: '10px', borderRadius: '25px' }}
+            onClick={shareMealPlan}
+          >
+            Copy Link
+          </Button>
+        </div>
+      </TableContainer>
       <Button
         variant="contained"
         color="primary"
-        style={{ borderRadius: '25px' }}
+        style={{ marginTop: '20px', borderRadius: '25px' }}
       >
-        Add New Meal
-        {/* TODO: navigate the user to a new page to add a meal? */}
+        Add New Meal Plan
       </Button>
     </div>
   );

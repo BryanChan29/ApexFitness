@@ -27,12 +27,8 @@ import LandingPage from './LandingPage/LandingPage';
 import LogoutButton from './components/LogoutButton';
 import { useAuth } from './LandingPage/authUtils';
 import WorkoutPage from './workouts/Workout';
-
-// Placeholder pages
-function MealsPage() {
-  return <Typography variant="h4">Meals Content</Typography>;
-}
-
+import MealPlan from './Meals/MealPlan';
+import { AccessDenied, NotFound } from './components/error';
 
 // Drawer width
 const drawerWidth = 240;
@@ -132,10 +128,16 @@ function App() {
             <Routes>
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/food-dash" element={<FoodDash />} />
-              <Route path="/meals" element={<MealsPage />} />
+              <Route path="/meals" element={<MealPlan />} />
               <Route path="/workouts" element={<WorkoutPage />} />
               {/* Redirect to Dashboard if user is logged in */}
               <Route path="*" element={<Navigate to="/dashboard" />} />
+
+              {/* Access Denied Route */}
+              <Route path="/access-denied" element={<AccessDenied />} />
+
+              {/* 404 Not Found Page */}
+              <Route path="/not-found" element={<NotFound />} />
             </Routes>
           </Box>
         </Box>
