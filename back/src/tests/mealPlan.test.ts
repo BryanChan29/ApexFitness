@@ -45,67 +45,67 @@ async function addToDb() {
     await db.run(
       `INSERT INTO daily_food (id, user_id, meal_type, name, calories, carbs, fat, protein, sodium, sugar) 
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
-      [1, '1', 'Breakfast', 'Oatmeal', 150, 27, 3, 5, 0, 1]
+      [5000, '1', 'Breakfast', 'Oatmeal', 150, 27, 3, 5, 0, 1]
     );
 
     await db.run(
       `INSERT INTO daily_food (id, user_id, meal_type, name, calories, carbs, fat, protein, sodium, sugar) 
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
-      [2, '1', 'Lunch', 'Chicken Salad', 350, 15, 20, 30, 500, 3]
+      [5001, '1', 'Lunch', 'Chicken Salad', 350, 15, 20, 30, 500, 3]
     );
 
     await db.run(
       `INSERT INTO daily_food (id, user_id, meal_type, name, calories, carbs, fat, protein, sodium, sugar) 
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
-      [3, '1', 'Dinner', 'Grilled Salmon', 400, 10, 25, 40, 700, 1]
+      [5002, '1', 'Dinner', 'Grilled Salmon', 400, 10, 25, 40, 700, 1]
     );
 
     await db.run(
       `INSERT INTO meals (id, date, saved_meal) 
        VALUES (?, ?, ?);`,
-      [10, '2025-02-24', 1]
+      [6000, '2025-02-24', 1]
     );
 
     await db.run(
       `INSERT INTO meals (id, date, saved_meal) 
        VALUES (?, ?, ?);`,
-      [11, '2025-02-25', 0]
+      [6001, '2025-02-25', 0]
     );
 
     await db.run(
       `INSERT INTO meal_items (meal_id, food_id) 
        VALUES (?, ?);`,
-      [10, 1]
+      [6000, 5000]
     );
 
     await db.run(
       `INSERT INTO meal_items (meal_id, food_id) 
        VALUES (?, ?);`,
-      [10, 2]
+      [6001, 5001]
     );
 
     await db.run(
       `INSERT INTO meal_items (meal_id, food_id) 
        VALUES (?, ?);`,
-      [11, 3]
+      [6001, 5002]
     );
 
     await db.run(
-      `INSERT INTO meal_plans (id, is_private) 
-       VALUES (?, ?);`,
-      [100, 1]
+      `INSERT INTO meal_plans (id, name, is_private) 
+       VALUES (?, ?, ?);`,
+      [100, 'Test Meal Plan', 1]
     );
 
     await db.run(
-      `INSERT INTO meal_plan_items (meal_plan_id, meal_id) 
-       VALUES (?, ?);`,
-      [100, 10]
+      `INSERT INTO meal_plan_items (meal_plan_id, meal_id, day_of_week) 
+       VALUES (?, ?, ?);`,
+      [100, 6000, 'thursday']
     );
 
     await db.run(
-      `INSERT INTO meal_plan_items (meal_plan_id, meal_id) 
-       VALUES (?, ?);`,
-      [100, 11]
+      `INSERT INTO meal_plan_items (meal_plan_id, meal_id, day_of_week) 
+       VALUES (?, ?, ?);`,
+      [100, 6001, 'wednesday']
     );
 
     console.log('Data inserted successfully!');
@@ -116,6 +116,7 @@ async function addToDb() {
 
 beforeAll(async () => {
   await initializeDb();
+  console.log("DB Init'd");
 });
 
 beforeEach(async () => {
@@ -127,13 +128,11 @@ afterAll(async () => {
 });
 
 describe('Meal Plan API', () => {
-  afterEach(async () => {
-    resetDb();
-  });
+  // afterEach(async () => {
+  //   await resetDb();
+  // });
 
   test('GET /meal_plan/:id - Retrieve daily food items for a valid meal plan', async () => {
-    await resetDb();
-
     await addToDb();
 
     const res = await axios.get(`${baseUrl}/meal_plan/100`);
@@ -150,7 +149,6 @@ describe('Meal Plan API', () => {
   });
 
   test('GET /meal_plan/:id - Returns 400 for invalid meal plan ID', async () => {
-    await resetDb();
     await addToDb();
     try {
       await axios.get(`${baseUrl}/meal_plan/invalidId`);
@@ -162,7 +160,6 @@ describe('Meal Plan API', () => {
   });
 
   test('GET /meal_plan/:id - Returns 404 if no meals found', async () => {
-    await resetDb();
     try {
       await axios.get(`${baseUrl}/meal_plan/100`);
     } catch (error) {
@@ -173,7 +170,6 @@ describe('Meal Plan API', () => {
   });
 
   test('GET /meal_plan/:id - Returns 500 on database error', async () => {
-    await resetDb();
     await addToDb();
 
     // Force an error by renaming the table temporarily

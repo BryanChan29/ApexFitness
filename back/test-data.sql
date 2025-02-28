@@ -15,9 +15,9 @@ INSERT INTO meal_items (meal_id, food_id) VALUES(10, 1);
 INSERT INTO meals (id, date, saved_meal) VALUES(11, '02/18/2025', false);
 INSERT INTO meal_items (meal_id, food_id) VALUES(11, 2);
 
-INSERT INTO meal_plans (id, is_private) VALUES(100, 1);
+INSERT INTO meal_plans (id, name, is_private) VALUES(100, "Bryan's test meal plan", 1);
 
-INSERT INTO meal_plan_items (meal_plan_id, meal_id) VALUES 
-(100, 10),
-(100, 11);
+INSERT INTO meal_plan_items (meal_plan_id, meal_id, day_of_week) VALUES 
+(100, 10, 'tuesday'),
+(100, 11, 'tuesday');
 

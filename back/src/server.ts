@@ -371,6 +371,7 @@ requestRouter.get('/meal_plan/:id', async (req, res) => {
   WHERE mpi.meal_plan_id = ?;`;
   try {
     result = await db.all(query, [mealPlanId]);
+    console.log(result);
     if (result.length === 0) {
       return res.status(404).json({ error: 'No meals found' });
     }
