@@ -27,12 +27,36 @@ import LandingPage from './LandingPage/LandingPage';
 import LogoutButton from './components/LogoutButton';
 import { useAuth } from './LandingPage/authUtils';
 import WorkoutPage from './workouts/Workout';
-import SavedMeals from './Meals/SavedMeals';
 import MealPlan from './Meals/MealPlan';
 
-// Placeholder pages
-function MealsPage() {
-  return <Typography variant="h4">Meals Content</Typography>;
+function AccessDenied() {
+  return (
+    <Box
+      sx={{
+        mt: 10,
+      }}
+    >
+      <Typography variant="h4" color="error">
+        Access Denied
+      </Typography>
+      <Typography variant="body1">
+        You do not have permission to view this page.
+      </Typography>
+    </Box>
+  );
+}
+
+function NotFound() {
+  return (
+    <Box sx={{ mt: 10 }}>
+      <Typography variant="h4" color="error">
+        Page Not Found
+      </Typography>
+      <Typography variant="body1">
+        The page you are looking for does not exist.
+      </Typography>
+    </Box>
+  );
 }
 
 // Drawer width
@@ -137,6 +161,12 @@ function App() {
               <Route path="/workouts" element={<WorkoutPage />} />
               {/* Redirect to Dashboard if user is logged in */}
               <Route path="*" element={<Navigate to="/dashboard" />} />
+
+              {/* Access Denied Route */}
+              <Route path="/access-denied" element={<AccessDenied />} />
+
+              {/* 404 Not Found Page */}
+              <Route path="/not-found" element={<NotFound />} />
             </Routes>
           </Box>
         </Box>
