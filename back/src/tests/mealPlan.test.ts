@@ -128,9 +128,9 @@ afterAll(async () => {
 });
 
 describe('Meal Plan API', () => {
-  // afterEach(async () => {
-  //   await resetDb();
-  // });
+  afterEach(async () => {
+    await resetDb();
+  });
 
   test('GET /meal_plan/:id - Retrieve daily food items for a valid meal plan', async () => {
     await addToDb();
