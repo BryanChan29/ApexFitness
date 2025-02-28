@@ -83,3 +83,14 @@ CREATE TABLE workout_exercises (
     FOREIGN KEY (workout_id) REFERENCES workouts(id) ON DELETE CASCADE,
     FOREIGN KEY (exercise_id) REFERENCES exercises(id) ON DELETE CASCADE
 );
+
+-- User Weight History Table
+CREATE TABLE user_weight_history (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id VARCHAR(50) NOT NULL,
+    date_recorded DATETIME NOT NULL,
+    weight INTEGER NOT NULL,
+    -- Optionally track body fat %, waist size, etc. if needed
+    notes TEXT,
+    FOREIGN KEY (user_id) REFERENCES users (id)
+);

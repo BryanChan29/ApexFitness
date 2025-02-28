@@ -21,16 +21,23 @@ import {
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import RestaurantMenuIcon from '@mui/icons-material/RestaurantMenu';
 import FitnessCenterIcon from '@mui/icons-material/FitnessCenter';
-import Dashboard from './progresspage/Dashboard';
+import Goals from './progresspage/Goals';
 import FoodDash from './pages/FoodDash';
 import LandingPage from './LandingPage/LandingPage';
 import LogoutButton from './components/LogoutButton';
 import { useAuth } from './LandingPage/authUtils';
 import WorkoutPage from './workouts/Workout';
+import FlagIcon from '@mui/icons-material/Flag';
+
 
 // Placeholder pages
 function MealsPage() {
   return <Typography variant="h4">Meals Content</Typography>;
+}
+
+
+function Dashboard() {
+  return <Typography variant="h4">Dashboard Content</Typography>;
 }
 
 
@@ -116,6 +123,13 @@ function App() {
                 </ListItemIcon>
                 <ListItemText primary="Workouts" />
               </ListItemButton>
+
+              <ListItemButton component={Link} to="/goals">
+                <ListItemIcon>
+                  <FlagIcon  />
+                </ListItemIcon>
+                <ListItemText primary="My Goals" />
+              </ListItemButton>
             </List>
           </Drawer>
 
@@ -134,6 +148,7 @@ function App() {
               <Route path="/food-dash" element={<FoodDash />} />
               <Route path="/meals" element={<MealsPage />} />
               <Route path="/workouts" element={<WorkoutPage />} />
+              <Route path="/goals" element={<Goals/>} />
               {/* Redirect to Dashboard if user is logged in */}
               <Route path="*" element={<Navigate to="/dashboard" />} />
             </Routes>

@@ -389,6 +389,83 @@ app.get('/api/food-detail', async (req: Request, res: Response) => {
   }
 });
 
+
+app.get('/api/user', async (req: Request, res: Response) => {
+  // Retrieve token from cookies
+  const { token } = req.cookies;
+  if (!token || !tokenStorage[token]) {
+    return res.status(401).json({ error: 'Not authenticated' });
+  }
+
+  // Look up the user's email based on the token
+  const userEmail = tokenStorage[token];
+
+  try {
+    // Query the database for the user by email
+    const user = await db.get('SELECT * FROM users WHERE email = ?', [userEmail]);
+    if (!user) {
+      return res.status(404).json({ error: `No user found with email ${userEmail}` });
+    }
+    // Return the user object (all fields)
+    return res.status(200).json(user);
+  } catch (error) {
+    console.error('Error fetching user:', error);
+    return res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
+
+
+
+// PATCH endpoint for updating body metrics
+app.patch('/api/user/metrics', async (req: Request, res: Response) => {
+  // Retrieve token from cookies (make sure cookie-parser middleware is enabled)
+  const { token } = req.cookies;
+  if (!token || !tokenStorage[token]) {
+    return res.status(401).json({ error: 'Not authenticated' });
+  }
+
+  // Retrieve the user's email from the token storage
+  const userEmail = tokenStorage[token];
+
+  try {
+    // Get the existing user record by email
+    const existingUser = await db.get('SELECT * FROM users WHERE email = ?', [userEmail]);
+    if (!existingUser) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Extract only the body metrics from the request body
+    const { current_weight, goal_weight, height, age, activity_level } = req.body;
+
+    // Update the user record with new metrics, preserving fields that are not provided
+    await db.run(
+      `UPDATE users 
+       SET 
+         current_weight = COALESCE(?, current_weight),
+         goal_weight = COALESCE(?, goal_weight),
+         height = COALESCE(?, height),
+         age = COALESCE(?, age),
+         activity_level = COALESCE(?, activity_level)
+       WHERE email = ?`,
+      current_weight,
+      goal_weight,
+      height,
+      age,
+      activity_level,
+      userEmail
+    );
+
+    // Retrieve the updated user record and return it
+    const updatedUser = await db.get('SELECT * FROM users WHERE email = ?', [userEmail]);
+    return res.status(200).json(updatedUser);
+  } catch (error) {
+    console.error('Error updating metrics:', error);
+    return res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
+
 // run server
 let port = 3000;
 let host = 'localhost';
