@@ -12,6 +12,7 @@
         "@apex/shared": "file:../shared",
         "dotenv": "^16.4.7",
         "express": "^4.18.2",
+        "simple-oauth2": "^5.1.0",
         "sqlite": "^4.2.1",
         "sqlite3": "^5.1.7"
     },

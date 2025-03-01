@@ -9,8 +9,8 @@ const LogoutButton: React.FC = () => {
   const handleLogout = async () => {
     try {
       await axios.post('/api/logout', {}, { withCredentials: true });
-      navigate('/'); // Redirect to Landing Page
-      window.location.reload(); // Refresh to update auth state
+      navigate('/');
+      window.location.reload();
     } catch (error) {
       console.error('Logout failed:', error);
     }
@@ -21,15 +21,18 @@ const LogoutButton: React.FC = () => {
       variant="outlined"
       onClick={handleLogout}
       sx={{
-        position: 'absolute',
-        top: 15,
-        right: 20,
-        color: 'white',
-        borderColor: 'white',
+        position: 'relative',
+        bottom: 0,
+        marginTop: 'auto',
+        color: '#000',
+        borderColor: '#000',
+        borderRadius: '20px',
+        width: '80%',
         '&:hover': {
-          borderColor: 'white',
-          backgroundColor: 'rgba(255, 255, 255, 0.1)',
+          borderColor: '#000',
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
         },
+        backgroundColor: 'rgba(255, 255, 255, 0.7)',
       }}
     >
       Logout

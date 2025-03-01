@@ -17,18 +17,12 @@ dotenv.config({ path: path.resolve(__curr_dirname, '../../.env') });
 
 if (
   !process.env.FATSECRET_CONSUMER_KEY ||
-  !process.env.FATSECRET_SHARED_SECRET
+  !process.env.FATSECRET_CLIENT_SECRET
 ) {
   throw new Error(
-    'FATSECRET_CONSUMER_KEY and/or FATSECRET_SHARED_SECRET is not defined in .env file'
+    'FATSECRET_CONSUMER_KEY and/or FATSECRET_CLIENT_SECRET is not defined in .env file'
   );
 }
-
-// * Force as string so that it can be typed properly.
-// * Should be empty string
-const FATSECRET_CONSUMER_KEY = process.env.FATSECRET_CONSUMER_KEY as string;
-const FATSECRET_SHARED_SECRET = process.env.FATSECRET_SHARED_SECRET as string;
-const FATSECRET_API_URL = 'https://platform.fatsecret.com/rest/server.api';
 
 let app = express();
 app.use(express.json());
@@ -52,14 +46,64 @@ function validateLogin(body: { email: string; password?: string }) {
 }
 
 const cookieOptions: CookieOptions = {
-  httpOnly: true, // Prevent client-side JavaScript access
-  secure: true, // Secure only in production and Fly.io
-  sameSite: 'strict', // Prevent CSRF attacks
+  httpOnly: true,
+  secure: process.env.NODE_ENV === 'production',
+  sameSite: 'lax',
 };
 
 app.use(cookieParser());
 
-// Auth
+const FATSECRET_API_URL = 'https://platform.fatsecret.com/rest/server.api';
+const FATSECRET_TOKEN_URL = 'https://oauth.fatsecret.com/connect/token';
+let fatSecretAccessToken: string | null = null;
+let tokenExpiryTime: number | null = null;
+
+async function getFatSecretAccessToken() {
+  if (fatSecretAccessToken && tokenExpiryTime && Date.now() < tokenExpiryTime) {
+    return fatSecretAccessToken;
+  }
+
+  try {
+    const response = await axios.post(
+      FATSECRET_TOKEN_URL,
+      new URLSearchParams({
+        grant_type: 'client_credentials',
+        scope: 'premier',
+      }).toString(),
+      {
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        auth: {
+          username: process.env.FATSECRET_CLIENT_ID!,
+          password: process.env.FATSECRET_CLIENT_SECRET!,
+        },
+      }
+    );
+
+    fatSecretAccessToken = response.data.access_token;
+    tokenExpiryTime = Date.now() + response.data.expires_in * 1000;
+    return fatSecretAccessToken;
+  } catch (error) {
+    console.error('Error fetching FatSecret access token:', error);
+    throw new Error('Failed to obtain FatSecret access token');
+  }
+}
+
+// Middleware to ensure we have a valid FatSecret token before making API calls
+async function authenticateFatSecret(req: Request, res: Response, next: any) {
+  try {
+    const accessToken = await getFatSecretAccessToken();
+    if (accessToken) {
+      req.accessToken = accessToken;
+      next();
+    } else {
+      res.status(500).json({ error: 'Failed to obtain FatSecret access token' });
+    }
+  } catch (error) {
+    res.status(500).json({ error: 'Authentication with FatSecret failed' });
+  }
+}
 
 app.post('/api/register', async (req, res) => {
   const { email, username, password } = req.body;
@@ -320,39 +364,8 @@ requestRouter.get('/meals/:id', async (req, res) => {
   return res.json({ result });
 });
 
-function generateOAuthSignature(url: string, method: string, params: any) {
-  const oauthParams = {
-    oauth_consumer_key: FATSECRET_CONSUMER_KEY,
-    oauth_nonce: crypto.randomBytes(16).toString('hex'),
-    oauth_signature_method: 'HMAC-SHA1',
-    oauth_timestamp: Math.floor(Date.now() / 1000),
-    oauth_version: '1.0',
-  };
-
-  const allParams = { ...params, ...oauthParams };
-
-  // Sort and encode parameters
-  const sortedParams = Object.keys(allParams)
-    .sort()
-    .map(
-      (key) =>
-        `${encodeURIComponent(key)}=${encodeURIComponent(allParams[key])}`
-    )
-    .join('&');
-
-  const baseString = `${method.toUpperCase()}&${encodeURIComponent(
-    url
-  )}&${encodeURIComponent(sortedParams)}`;
-  const signingKey = `${encodeURIComponent(FATSECRET_SHARED_SECRET)}&`;
-  const signature = crypto
-    .createHmac('sha1', signingKey)
-    .update(baseString)
-    .digest('base64');
-
-  return { ...oauthParams, oauth_signature: signature };
-}
-
-app.get('/api/search-food', async (req: Request, res: Response) => {
+// Replace previous API calls with OAuth2 authorization header
+app.get('/api/search-food', authenticateFatSecret, async (req: Request, res: Response) => {
   try {
     const query = req.query.query as string;
 
@@ -361,16 +374,15 @@ app.get('/api/search-food', async (req: Request, res: Response) => {
       search_expression: query,
       format: 'json',
       max_results: 10,
+      include_food_attributes: 1,
+      flag_default_serving: 1,
     };
 
-    const oauthParams = generateOAuthSignature(
-      FATSECRET_API_URL,
-      'GET',
-      params
-    );
-
     const response = await axios.get(FATSECRET_API_URL, {
-      params: { ...params, ...oauthParams },
+      headers: {
+        Authorization: `Bearer ${req.accessToken}`,
+      },
+      params: params,
     });
 
     res.json(response.data);
@@ -380,7 +392,7 @@ app.get('/api/search-food', async (req: Request, res: Response) => {
   }
 });
 
-app.get('/api/food-detail', async (req: Request, res: Response) => {
+app.get('/api/food-detail', authenticateFatSecret, async (req: Request, res: Response) => {
   try {
     const foodId = req.query.foodId as string;
 
@@ -390,14 +402,11 @@ app.get('/api/food-detail', async (req: Request, res: Response) => {
       format: 'json',
     };
 
-    const oauthParams = generateOAuthSignature(
-      FATSECRET_API_URL,
-      'GET',
-      params
-    );
-
     const response = await axios.get(FATSECRET_API_URL, {
-      params: { ...params, ...oauthParams },
+      headers: {
+        Authorization: `Bearer ${req.accessToken}`,
+      },
+      params: params,
     });
 
     res.json(response.data);

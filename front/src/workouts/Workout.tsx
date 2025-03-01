@@ -126,7 +126,7 @@ const WorkoutPage: React.FC = () => {
       <Typography variant="h4" gutterBottom>Cardio Workouts</Typography>
       <Grid container spacing={3}>
         <Grid item xs={12}>
-          <Paper sx={{ p: 2 }}>
+          <Paper sx={{ p: 2, borderRadius: 10 }}>
             <TableContainer component={Paper}>
               <Table>
                 <TableHead>
@@ -159,7 +159,7 @@ const WorkoutPage: React.FC = () => {
       <Typography variant="h4" gutterBottom sx={{ mt: 4 }}>Strength Training Workouts</Typography>
       <Grid container spacing={3}>
         <Grid item xs={12}>
-          <Paper sx={{ p: 2 }}>
+          <Paper sx={{ p: 2, borderRadius: 10  }}>
             <TableContainer component={Paper}>
               <Table>
                 <TableHead>

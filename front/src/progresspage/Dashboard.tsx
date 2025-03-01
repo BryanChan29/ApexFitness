@@ -98,7 +98,7 @@ const ProgressDashboard: React.FC = () => {
       <Grid container spacing={3}>
         {/* Left Column: Chart */}
         <Grid item xs={12} md={8}>
-          <Paper sx={{ p: 2, height: '100%' }}>
+          <Paper sx={{ p: 2, height: '100%', borderRadius: 10 }}>
             <Box sx={{ height: 300 }}>
               <Line data={chartData} options={options} />
             </Box>
@@ -113,6 +113,7 @@ const ProgressDashboard: React.FC = () => {
               display: 'flex',
               flexDirection: 'column',
               height: '100%',
+              borderRadius: 10,
             }}
           >
             <Typography variant="subtitle1" color="text.secondary">

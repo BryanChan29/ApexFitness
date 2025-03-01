@@ -17,7 +17,7 @@
     "@mui/material": "^6.4.4",
     "axios": "^1.7.9",
     "react": "^19.0.0",
-    "react-circular-progressbar": "^2.1.0",
+    "react-circular-progressbar": "^2.2.0",
     "react-dom": "^19.0.0",
     "vite-plugin-eslint": "^1.8.1",
     "zod": "^3.24.2"
