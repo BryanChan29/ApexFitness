@@ -45,6 +45,7 @@ CREATE TABLE meal_items (
 -- Meal Plans Table
 CREATE TABLE meal_plans ( 
     id INTEGER PRIMARY KEY AUTOINCREMENT, 
+    name VARCHAR(50) NOT NULL,
     is_private BOOLEAN NOT NULL DEFAULT 1
 );
 
@@ -52,7 +53,8 @@ CREATE TABLE meal_plans (
 CREATE TABLE meal_plan_items (
     meal_plan_id INTEGER NOT NULL,
     meal_id INTEGER NOT NULL,
-    PRIMARY KEY (meal_plan_id, meal_id),
+    day_of_week VARCHAR(15) NOT NULL,
+    PRIMARY KEY (meal_plan_id, meal_id, day_of_week),
     FOREIGN KEY (meal_plan_id) REFERENCES meal_plans(id) ON DELETE CASCADE,
     FOREIGN KEY (meal_id) REFERENCES meals(id) ON DELETE CASCADE
 );
@@ -82,4 +84,15 @@ CREATE TABLE workout_exercises (
     PRIMARY KEY (workout_id, exercise_id),
     FOREIGN KEY (workout_id) REFERENCES workouts(id) ON DELETE CASCADE,
     FOREIGN KEY (exercise_id) REFERENCES exercises(id) ON DELETE CASCADE
+);
+
+-- User Weight History Table
+CREATE TABLE user_weight_history (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id VARCHAR(50) NOT NULL,
+    date_recorded DATETIME NOT NULL,
+    weight INTEGER NOT NULL,
+    -- Optionally track body fat %, waist size, etc. if needed
+    notes TEXT,
+    FOREIGN KEY (user_id) REFERENCES users (id)
 );

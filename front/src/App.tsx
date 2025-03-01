@@ -26,11 +26,11 @@ import LogoutButton from './components/LogoutButton';
 import { useAuth } from './LandingPage/authUtils';
 import WorkoutPage from './workouts/Workout';
 import './App.css';
+import MealPlan from './Meals/MealPlan';
+import { AccessDenied, NotFound } from './components/error';
 
-// Placeholder pages
-function MealsPage() {
-  return <Typography variant="h4">Meals Content</Typography>;
-}
+import FlagIcon from '@mui/icons-material/Flag';
+import Goals from './progresspage/Goals';
 
 
 // Drawer width
@@ -52,6 +52,10 @@ function App() {
         <CircularProgress />
       </Box>
     );
+  }
+
+  function Dashboard() {
+    return <Typography variant="h4">Dashboard Content</Typography>;
   }
 
   return (
@@ -125,6 +129,14 @@ function App() {
               <Box sx={{ paddingBottom: 2 }}>
                 <LogoutButton />
               </Box>
+
+              <ListItemButton component={Link} to="/goals">
+                <ListItemIcon>
+                  <FlagIcon  />
+                </ListItemIcon>
+                <ListItemText primary="My Goals" />
+              </ListItemButton>
+
             </List>
           </Drawer>
 
@@ -141,9 +153,18 @@ function App() {
             <Routes>
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/food-dash" element={<FoodDash />} />
-              <Route path="/meals" element={<MealsPage />} />
+              <Route path="/meals" element={<MealPlan />} />
               <Route path="/workouts" element={<WorkoutPage />} />
+              <Route path="/goals" element={<Goals/>} />
+
+              {/* Redirect to Dashboard if user is logged in */}
               <Route path="*" element={<Navigate to="/dashboard" />} />
+
+              {/* Access Denied Route */}
+              <Route path="/access-denied" element={<AccessDenied />} />
+
+              {/* 404 Not Found Page */}
+              <Route path="/not-found" element={<NotFound />} />
             </Routes>
           </Box>
         </Box>
