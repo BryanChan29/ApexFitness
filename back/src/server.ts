@@ -2,7 +2,13 @@ import express, { Response, Request, CookieOptions } from 'express';
 import sqlite3 from 'sqlite3';
 import { open } from 'sqlite';
 import * as url from 'url';
-import { DBDailyFoodItem, User } from '@apex/shared';
+import {
+  DBDailyFoodItem,
+  UIDailyMeal,
+  UIFormattedDailyFoodItem,
+  UIFormattedMealPlan,
+  User,
+} from '@apex/shared';
 import * as crypto from 'crypto';
 import cookieParser from 'cookie-parser';
 import axios from 'axios';
@@ -355,26 +361,182 @@ requestRouter.get('/daily_food', async (req, res) => {
 });
 
 requestRouter.get('/meal_plan/:id', async (req, res) => {
-  // TODO: work on permissions, but for now just return everything in `daily_food` table
-  let result: DBDailyFoodItem[];
-  // ? Do an inner join, first get all meals associated with the meal plan
-  // ? Then do another inner join, get all daily foods associated with each meal
-  // ? then return..?
-  try {
-    result = await db.all('SELECT * FROM daily_food');
-    if (result.length === 0) {
-      return res.status(404).json({ error: 'No meals found' });
-    }
-  } catch (err) {
-    const error = err as object;
-    return res.status(500).json({ error: error.toString() });
+  let result: { day_of_week: string; daily_foods: string }[];
+  const mealPlanId = parseInt(req.params.id, 10);
+
+  if (isNaN(mealPlanId)) {
+    return res.status(400).json({ error: 'Invalid Meal Plan ID' });
   }
 
-  return res.json({ result });
+  const query = `
+    SELECT 
+        mpi.day_of_week,
+        json_group_array(
+            json_object(
+                'name', df.name,
+                'meal_type', df.meal_type,
+                'calories', df.calories,
+                'carbs', df.carbs,
+                'fat', df.fat,
+                'protein', df.protein,
+                'sodium', df.sodium,
+                'sugar', df.sugar
+            )
+        ) AS daily_foods
+    FROM meal_plans mp
+    LEFT JOIN meal_plan_items mpi ON mp.id = mpi.meal_plan_id
+    LEFT JOIN meals m ON mpi.meal_id = m.id
+    LEFT JOIN meal_items mi ON m.id = mi.meal_id
+    LEFT JOIN daily_food df ON mi.food_id = df.id
+    WHERE mp.id = ?
+    GROUP BY mpi.day_of_week;
+  `;
+
+  try {
+    result = await db.all(query, [mealPlanId]);
+
+    if (!result || result.length === 0) {
+      return res.status(404).json({ error: 'Meal plan not found' });
+    }
+
+    const formattedMealPlan: Partial<UIFormattedMealPlan> = {};
+
+    result.forEach((row) => {
+      const dayOfWeek =
+        row.day_of_week.toLowerCase() as keyof UIFormattedMealPlan; // Use day_of_week directly
+
+      if (!formattedMealPlan[dayOfWeek]) {
+        formattedMealPlan[dayOfWeek] = {
+          breakfast: [],
+          lunch: [],
+          dinner: [],
+          snack: [],
+        };
+      }
+
+      const dailyFoods: UIFormattedDailyFoodItem[] = row.daily_foods
+        ? JSON.parse(row.daily_foods)
+        : [];
+
+      dailyFoods.forEach((food) => {
+        const mealType = food.meal_type.toLowerCase() as keyof UIDailyMeal;
+        formattedMealPlan[dayOfWeek]![mealType].push(food);
+      });
+    });
+
+    return res.json({ result: formattedMealPlan });
+  } catch (err: any) {
+    console.error(err);
+    return res.status(500).json({ error: err.toString() });
+  }
+});
+
+requestRouter.get('/meal_plans/:user_id', async (req, res) => {
+  // TODO: work on permissions, get USER ID
+  // TODO: make it work
+
+  let result;
+  const userId = req.params.user_id;
+
+  if (!userId) {
+    return res.status(400).json({ error: 'Invalid User ID' });
+  }
+
+  const query = `
+      SELECT 
+          mp.id AS meal_plan_id,
+          m.date AS meal_date,
+          json_group_array(
+              json_object(
+                  'name', df.name,
+                  'meal_type', df.meal_type,
+                  'calories', df.calories,
+                  'carbs', df.carbs,
+                  'fat', df.fat,
+                  'protein', df.protein,
+                  'sodium', df.sodium,
+                  'sugar', df.sugar
+              )
+          ) AS daily_foods
+      FROM meal_plans mp
+      LEFT JOIN meal_plan_items mpi ON mp.id = mpi.meal_plan_id
+      LEFT JOIN meals m ON mpi.meal_id = m.id
+      LEFT JOIN meal_items mi ON m.id = mi.meal_id
+      LEFT JOIN daily_food df ON mi.food_id = df.id
+      WHERE df.user_id = ? 
+      GROUP BY mp.id, m.date;
+    `;
+
+  try {
+    result = await db.all(query, [userId]);
+
+    if (!result || result.length === 0) {
+      return res.status(404).json({ error: 'No meal plans found' });
+    }
+
+    const mealPlans: Record<number, UIFormattedMealPlan> = {};
+
+    result.forEach((row) => {
+      const mealPlanId = row.meal_plan_id;
+      const dateObj = new Date(row.meal_date);
+      const dayNames = [
+        'sunday',
+        'monday',
+        'tuesday',
+        'wednesday',
+        'thursday',
+        'friday',
+        'saturday',
+      ];
+      const dayOfWeek = dayNames[
+        dateObj.getUTCDay()
+      ] as keyof UIFormattedMealPlan;
+
+      if (!mealPlans[mealPlanId]) {
+        mealPlans[mealPlanId] = {
+          monday: { breakfast: [], lunch: [], dinner: [], snack: [] },
+          tuesday: { breakfast: [], lunch: [], dinner: [], snack: [] },
+          wednesday: { breakfast: [], lunch: [], dinner: [], snack: [] },
+          thursday: { breakfast: [], lunch: [], dinner: [], snack: [] },
+          friday: { breakfast: [], lunch: [], dinner: [], snack: [] },
+          saturday: { breakfast: [], lunch: [], dinner: [], snack: [] },
+          sunday: { breakfast: [], lunch: [], dinner: [], snack: [] },
+        };
+      }
+
+      if (!mealPlans[mealPlanId][dayOfWeek]) {
+        mealPlans[mealPlanId][dayOfWeek] = {
+          breakfast: [],
+          lunch: [],
+          dinner: [],
+          snack: [],
+        };
+      }
+
+      const dailyFoods: UIFormattedDailyFoodItem[] = row.daily_foods
+        ? JSON.parse(row.daily_foods)
+        : [];
+
+      dailyFoods.forEach((food) => {
+        const mealType = food.meal_type.toLowerCase() as keyof UIDailyMeal;
+        mealPlans[mealPlanId][dayOfWeek][mealType].push(food);
+      });
+    });
+
+    return res.json({
+      result: Object.entries(mealPlans).map(([id, data]) => ({
+        meal_plan_id: Number(id),
+        ...data,
+      })),
+    });
+  } catch (err: any) {
+    console.error(err);
+    return res.status(500).json({ error: err.toString() });
+  }
 });
 
 requestRouter.get('/meals/:id', async (req, res) => {
-  // TODO: work on permissions, but for now just return everything in `daily_food` table
+  // TODO: work on permissions
   // ! This route might not actually be valid... Made this just to test meals/inner joins
   let result: DBDailyFoodItem[];
   const mealId = parseInt(req.params.id, 10);
@@ -389,7 +551,6 @@ requestRouter.get('/meals/:id', async (req, res) => {
     INNER JOIN meals m ON mi.meal_id = m.id
     WHERE m.id = ?;
   `;
-
   try {
     result = await db.all(query, [mealId]);
     if (result.length === 0) {

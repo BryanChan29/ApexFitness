@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Typography,
   Button,
@@ -22,8 +22,9 @@ import {
   mockSnack,
 } from '@apex/shared';
 import './SavedMeals.css';
+import axios from 'axios';
 
-const sampleMealPlan: UIFormattedMealPlan = {
+const mp: UIFormattedMealPlan = {
   monday: {
     breakfast: [mockBreakfast[0], mockBreakfast[1]],
     lunch: [mockLunch[0]],
@@ -69,19 +70,13 @@ const sampleMealPlan: UIFormattedMealPlan = {
 };
 
 function MealPlan() {
-  // ? eventually, use database to get meal plans...
-  // ! Need to transpose/rotate table?
-  // ! Since we want it to be...
   // ? X          Day   day   day
   // ? Breakfast  M1    M2    M3
   // ? Lunch      M1    M2    M3
   // ? Dinner     M1    M2    M3
   // ? Snack      M1    M2    M3
-  // ? Then... make a utility function that takes a UIFormattedMealPlan
-  // ? then... return an object or 2d array in the format:
-  // ? Breakfast: {[day_1meal, day2_meal, ...]}
-  // ? But then... need to grab all food items from each meal, and display?
-  // Function to transpose meal plan data into a row-first format
+
+  const [sampleMealPlan, setSampleMealPlan] = useState<UIFormattedMealPlan>(mp);
 
   const [isPublic, setIsPublic] = useState<boolean>(false);
 
@@ -89,7 +84,6 @@ function MealPlan() {
     event: React.ChangeEvent<HTMLInputElement>
   ): void {
     setIsPublic(event.target.checked);
-    console.log(isPublic);
   }
 
   const formatMealPlan = (mealPlan: UIFormattedMealPlan) => {
@@ -109,6 +103,15 @@ function MealPlan() {
       ),
     }));
   };
+
+  useEffect(() => {
+    axios.get('/api/meal_plan/100', { withCredentials: true }).then((res) => {
+      const formattedMealPlan: UIFormattedMealPlan = res.data
+        .result as UIFormattedMealPlan;
+      setSampleMealPlan(formattedMealPlan);
+    });
+    console.log(sampleMealPlan);
+  }, []);
 
   const formattedMeals = formatMealPlan(sampleMealPlan);
   const days = Object.keys(sampleMealPlan).map(
@@ -177,13 +180,15 @@ function MealPlan() {
             onChange={handlePublicModifier}
             inputProps={{ 'aria-label': 'controlled' }}
           />
-          <Button
-            variant="contained"
-            style={{ marginBottom: '10px', borderRadius: '25px' }}
-            onClick={shareMealPlan}
-          >
-            Copy Link
-          </Button>
+          {isPublic && (
+            <Button
+              variant="contained"
+              style={{ marginBottom: '10px', borderRadius: '25px' }}
+              onClick={shareMealPlan}
+            >
+              Copy Link
+            </Button>
+          )}
         </div>
       </TableContainer>
       <Button
