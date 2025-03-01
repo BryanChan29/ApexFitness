@@ -15,10 +15,8 @@ import {
   TextField,
   Modal,
   FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
 } from '@mui/material';
+import axios from 'axios';
 
 interface CardioWorkoutEntry {
   id: number;
@@ -35,6 +33,13 @@ interface StrengthWorkoutEntry {
   weight: number;
 }
 
+interface ApiCaloriesBurnedResponse {
+  name: string;
+  calories_per_hour: number;
+  duration_minutes?: number; //Add if they exist
+  total_calories?: number; //Add if they exist
+}
+
 const WorkoutPage: React.FC = () => {
   const [cardioData, setCardioData] = useState<CardioWorkoutEntry[]>([]);
   const [strengthData, setStrengthData] = useState<StrengthWorkoutEntry[]>([]);
@@ -44,17 +49,36 @@ const WorkoutPage: React.FC = () => {
   const [newStrength, setNewStrength] = useState<Omit<StrengthWorkoutEntry, 'id'>>({ workoutType: '', sets: 0, reps: 0, weight: 0 });
   const [nextCardioId, setNextCardioId] = useState(1);
   const [nextStrengthId, setNextStrengthId] = useState(1);
+  const [searchResults, setSearchResults] = useState<ApiCaloriesBurnedResponse[]>([]);
+  const [openSearchResultsModal, setOpenSearchResultsModal] = useState(false);
+  const [selectedSearchResult, setSelectedSearchResult] = useState<ApiCaloriesBurnedResponse | null>(null);
+
 
   const handleOpenCardioModal = () => setOpenCardioModal(true);
   const handleCloseCardioModal = () => setOpenCardioModal(false);
   const handleOpenStrengthModal = () => setOpenStrengthModal(true);
   const handleCloseStrengthModal = () => setOpenStrengthModal(false);
+  const handleOpenSearchResultsModal = () => setOpenSearchResultsModal(true);
+  const handleCloseSearchResultsModal = () => setOpenSearchResultsModal(false);
 
   const handleAddCardio = () => {
-    setCardioData([...cardioData, { id: nextCardioId, ...newCardio }]);
-    setNextCardioId(nextCardioId + 1);
-    setNewCardio({ workoutType: '', duration: 0, caloriesBurned: 0 });
-    handleCloseCardioModal();
+    if (selectedSearchResult) {
+      const caloriesPerHour = selectedSearchResult.calories_per_hour;
+      const durationHours = newCardio.duration / 60;
+      const calculatedCalories = caloriesPerHour * durationHours;
+
+      const updatedCardio = { ...newCardio, caloriesBurned: calculatedCalories };
+      setCardioData([...cardioData, { id: nextCardioId, ...updatedCardio }]);
+      setNextCardioId(nextCardioId + 1);
+      setNewCardio({ workoutType: '', duration: 0, caloriesBurned: 0 });
+      setSelectedSearchResult(null); // Reset selected result
+      handleCloseCardioModal();
+    } else {
+      setCardioData([...cardioData, { id: nextCardioId, ...newCardio }]);
+      setNextCardioId(nextCardioId + 1);
+      setNewCardio({ workoutType: '', duration: 0, caloriesBurned: 0 });
+      handleCloseCardioModal();
+    }
   };
 
   const handleAddStrength = () => {
@@ -64,33 +88,78 @@ const WorkoutPage: React.FC = () => {
     handleCloseStrengthModal();
   };
 
+  const handleSearchWorkoutTypes = async () => {
+    try {
+      console.log("handleSearchWorkoutType");
+      const response = await axios.get('/api/calories-burned', {
+        params: { activity: newCardio.workoutType },
+      });
+      console.log(response.data);
+
+      setSearchResults(response.data);
+      handleOpenSearchResultsModal();
+    } catch (error) {
+      console.error('Error fetching workout types:', error);
+      // setSearchResults([{ name: 'Error fetching data', calories_per_hour: 0 }]);
+      handleOpenSearchResultsModal();
+    }
+  };
+
+  const handleSelectSearchResult = (workoutType: string) => {
+    const selected = searchResults.find((result) => result.name === workoutType);
+    setSelectedSearchResult(selected || null);
+    setNewCardio({ ...newCardio, workoutType });
+    handleCloseSearchResultsModal();
+  };
+
   const cardioModal = (
     <Modal open={openCardioModal} onClose={handleCloseCardioModal}>
       <Box sx={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: 400, bgcolor: 'background.paper', boxShadow: 24, p: 4 }}>
         <Typography variant="h6" gutterBottom>Add Cardio Workout</Typography>
 
-        <FormControl fullWidth margin="normal">
-          <InputLabel id="cardio-type-label">Workout Type</InputLabel>
-          <Select
-            labelId="cardio-type-label"
-            id="cardio-type"
-            value={newCardio.workoutType}
-            label="Workout Type"
-            onChange={(e) => setNewCardio({ ...newCardio, workoutType: e.target.value })}
-          >
-            <MenuItem value="Running">Running</MenuItem>
-            <MenuItem value="Swimming">Swimming</MenuItem>
-            <MenuItem value="Cycling">Cycling</MenuItem>
-            {/* Add more cardio types as needed */}
-          </Select>
-        </FormControl>
+        <TextField
+          label="Workout Type"
+          fullWidth
+          margin="normal"
+          value={newCardio.workoutType}
+          onChange={(e) => setNewCardio({ ...newCardio, workoutType: e.target.value })}
+        />
 
-        <TextField label="Duration (minutes)" type="number" fullWidth margin="normal" value={newCardio.duration} onChange={(e) => setNewCardio({ ...newCardio, duration: Number(e.target.value) })} />
-        <TextField label="Calories Burned" type="number" fullWidth margin="normal" value={newCardio.caloriesBurned} onChange={(e) => setNewCardio({ ...newCardio, caloriesBurned: Number(e.target.value) })} />
-        <Button variant="contained" color="primary" onClick={handleAddCardio}>Add</Button>
+        <Button variant="contained" color="primary" onClick={handleSearchWorkoutTypes} sx={{ mt: 2 }}>
+          Search Workout Types
+        </Button>
+
+        <TextField
+          label="Duration (minutes)"
+          type="number" 
+          fullWidth 
+          margin="normal" 
+          value={newCardio.duration} 
+          onChange={(e) => setNewCardio({ ...newCardio, duration: Number(e.target.value) })} />
+        {/* <TextField label="Calories Burned" type="number" fullWidth margin="normal" value={newCardio.caloriesBurned} onChange={(e) => setNewCardio({ ...newCardio, caloriesBurned: Number(e.target.value) })} /> */}
+        <Button variant="contained" color="primary" onClick={handleAddCardio} sx={{ mt: 2 }}>Add</Button>
       </Box>
     </Modal>
   );
+
+const searchResultsModal = (
+  <Modal open={openSearchResultsModal} onClose={handleCloseSearchResultsModal}>
+    <Box sx={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: 400, bgcolor: 'background.paper', boxShadow: 24, p: 4 }}>
+      <Typography variant="h6" gutterBottom>Search Results</Typography>
+      {searchResults.map((result, index) => (
+        <Button
+          key={index}
+          fullWidth
+          sx={{ my: 1 }}
+          variant="outlined"
+          onClick={() => handleSelectSearchResult(result.name)} // Pass only the name
+        >
+          {result.name} {/* Render only the name */}
+        </Button>
+      ))}
+    </Box>
+  </Modal>
+);
 
   const strengthModal = (
     <Modal open={openStrengthModal} onClose={handleCloseStrengthModal}>
@@ -98,19 +167,13 @@ const WorkoutPage: React.FC = () => {
         <Typography variant="h6" gutterBottom>Add Strength Workout</Typography>
 
         <FormControl fullWidth margin="normal">
-          <InputLabel id="strength-type-label">Workout Type</InputLabel>
-          <Select
-            labelId="strength-type-label"
-            id="strength-type"
-            value={newStrength.workoutType}
+          <TextField
             label="Workout Type"
+            fullWidth
+            margin="normal"
+            value={newStrength.workoutType}
             onChange={(e) => setNewStrength({ ...newStrength, workoutType: e.target.value })}
-          >
-            <MenuItem value="Squats">Squats</MenuItem>
-            <MenuItem value="Bench Press">Bench Press</MenuItem>
-            <MenuItem value="Deadlifts">Deadlifts</MenuItem>
-            {/* Add more strength types as needed */}
-          </Select>
+          />
         </FormControl>
 
         <TextField label="Sets" type="number" fullWidth margin="normal" value={newStrength.sets} onChange={(e) => setNewStrength({ ...newStrength, sets: Number(e.target.value) })} />
@@ -155,6 +218,7 @@ const WorkoutPage: React.FC = () => {
       </Grid>
 
       {cardioModal}
+      {searchResultsModal}
 
       <Typography variant="h4" gutterBottom sx={{ mt: 4 }}>Strength Training Workouts</Typography>
       <Grid container spacing={3}>
@@ -195,4 +259,3 @@ const WorkoutPage: React.FC = () => {
 };
 
 export default WorkoutPage;
-                

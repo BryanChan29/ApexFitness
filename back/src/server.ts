@@ -30,6 +30,9 @@ if (
   );
 }
 
+const BURN_API_URL = "https://api.api-ninjas.com/v1/caloriesburned";
+const BURN_API_KEY = "";
+
 let app = express();
 app.use(express.json());
 const requestRouter = express.Router();
@@ -733,6 +736,53 @@ app.patch('/api/user/metrics', async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Error updating metrics:', error);
     return res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
+
+
+app.get('/api/calories-burned', async (req: Request, res: Response) => {
+  try {
+      console.log("Burn handler");
+      const activity = req.query.activity as string;
+      if (!activity) {
+          return res.status(400).json({ error: 'Activity parameter is required' });
+      }
+
+      // Actual API call
+      const api_url = `${BURN_API_URL}?activity=${encodeURIComponent(activity)}`;
+      
+      const response = await axios.get(api_url, {
+          headers: { 'X-Api-Key': BURN_API_KEY },
+      });
+      
+      if (response.status === 200) {
+          res.json(response.data);
+      } else {
+          res.status(response.status).json({ error: response.data });
+      }
+
+      // Simulate API response for testing
+    //   const simulatedResponse = {
+    //     data: [
+    //         {
+    //             name: activity,
+    //             calories_per_hour: 300, // Example value
+    //             duration_minutes: 60, // Example value
+    //             total_calories: 300, // Example value
+    //         },
+    //         // Add more simulated data if needed
+    //     ],
+    //     status: 200,
+    //     statusText: 'OK',
+    //     headers: {},
+    //     config: {},
+    // };
+    // res.json(simulatedResponse.data);
+
+  } catch (error) {
+      console.error('Error fetching calories burned data:', error);
+      res.status(500).json({ error: 'Failed to fetch calories burned data' });
   }
 });
 
