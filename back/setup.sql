@@ -61,9 +61,11 @@ CREATE TABLE meal_plan_items (
 
 -- Workout Table
 CREATE TABLE workouts (
-    id INTEGER PRIMARY KEY AUTOINCREMENT, 
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id VARCHAR(50) NOT NULL,
     name VARCHAR(255) NOT NULL,
-    date TEXT NOT NULL
+    date TEXT NOT NULL,
+    FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 -- Exercises Table
