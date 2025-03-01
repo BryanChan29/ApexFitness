@@ -128,8 +128,8 @@ function MealPlan() {
       <Typography variant="h4" gutterBottom>
         Meal Plan
       </Typography>
-      <TableContainer component={Paper}>
-        <Table>
+      <TableContainer component={Paper} sx={{ borderRadius: '20px', overflow: 'hidden' }}>
+      <Table>
           <TableHead>
             <TableRow>
               <TableCell>

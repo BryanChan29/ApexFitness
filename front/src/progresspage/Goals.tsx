@@ -132,7 +132,7 @@ const WeightMetricsUI: React.FC = () => {
           maxWidth: 700,
           mx: 'auto',
           textAlign: 'center',
-          borderRadius: 2,
+          borderRadius: 5,
         }}
       >
         <Typography variant="h4" sx={{ mb: 3, fontWeight: 'bold' }}>

@@ -126,16 +126,20 @@ function App() {
                 <ListItemText primary="Workouts" sx={{ textAlign: 'center', marginTop: 1 }} />
               </ListItemButton>
 
+                <ListItemButton
+                component={Link}
+                to="/goals"
+                sx={{ justifyContent: 'center', padding: 2, flexDirection: 'column' }}
+                >
+                <ListItemIcon sx={{ display: 'flex', justifyContent: 'center' }}>
+                  <FlagIcon />
+                </ListItemIcon>
+                <ListItemText primary="My Goals" sx={{ textAlign: 'center', marginTop: 1 }} />
+                </ListItemButton>
+
               <Box sx={{ paddingBottom: 2 }}>
                 <LogoutButton />
               </Box>
-
-              <ListItemButton component={Link} to="/goals">
-                <ListItemIcon>
-                  <FlagIcon  />
-                </ListItemIcon>
-                <ListItemText primary="My Goals" />
-              </ListItemButton>
 
             </List>
           </Drawer>
