@@ -36,8 +36,8 @@ const FATSECRET_CONSUMER_KEY = process.env.FATSECRET_CONSUMER_KEY as string;
 const FATSECRET_SHARED_SECRET = process.env.FATSECRET_SHARED_SECRET as string;
 const FATSECRET_API_URL = 'https://platform.fatsecret.com/rest/server.api';
 
-const BURN_API_URL = "https://api.api-ninjas.com/v1/caloriesburned";
-const BURN_API_KEY = "";
+const BURN_API_URL = 'https://api.api-ninjas.com/v1/caloriesburned';
+const BURN_API_KEY = '';
 
 let app = express();
 app.use(express.json());
@@ -366,7 +366,6 @@ requestRouter.get('/daily_food', async (req, res) => {
 requestRouter.get('/meal_plan/:id', async (req, res) => {
   let result: { day_of_week: string; daily_foods: string }[];
   const mealPlanId = parseInt(req.params.id, 10);
-
   if (isNaN(mealPlanId)) {
     return res.status(400).json({ error: 'Invalid Meal Plan ID' });
   }
@@ -654,7 +653,6 @@ app.get('/api/food-detail', async (req: Request, res: Response) => {
   }
 });
 
-
 app.get('/api/user', async (req: Request, res: Response) => {
   // Retrieve token from cookies
   const { token } = req.cookies;
@@ -667,9 +665,13 @@ app.get('/api/user', async (req: Request, res: Response) => {
 
   try {
     // Query the database for the user by email
-    const user = await db.get('SELECT * FROM users WHERE email = ?', [userEmail]);
+    const user = await db.get('SELECT * FROM users WHERE email = ?', [
+      userEmail,
+    ]);
     if (!user) {
-      return res.status(404).json({ error: `No user found with email ${userEmail}` });
+      return res
+        .status(404)
+        .json({ error: `No user found with email ${userEmail}` });
     }
     // Return the user object (all fields)
     return res.status(200).json(user);
@@ -678,9 +680,6 @@ app.get('/api/user', async (req: Request, res: Response) => {
     return res.status(500).json({ error: 'Internal Server Error' });
   }
 });
-
-
-
 
 // PATCH endpoint for updating body metrics
 app.patch('/api/user/metrics', async (req: Request, res: Response) => {
@@ -695,13 +694,16 @@ app.patch('/api/user/metrics', async (req: Request, res: Response) => {
 
   try {
     // Get the existing user record by email
-    const existingUser = await db.get('SELECT * FROM users WHERE email = ?', [userEmail]);
+    const existingUser = await db.get('SELECT * FROM users WHERE email = ?', [
+      userEmail,
+    ]);
     if (!existingUser) {
       return res.status(404).json({ error: 'User not found' });
     }
 
     // Extract only the body metrics from the request body
-    const { current_weight, goal_weight, height, age, activity_level } = req.body;
+    const { current_weight, goal_weight, height, age, activity_level } =
+      req.body;
 
     // Update the user record with new metrics, preserving fields that are not provided
     await db.run(
@@ -722,7 +724,9 @@ app.patch('/api/user/metrics', async (req: Request, res: Response) => {
     );
 
     // Retrieve the updated user record and return it
-    const updatedUser = await db.get('SELECT * FROM users WHERE email = ?', [userEmail]);
+    const updatedUser = await db.get('SELECT * FROM users WHERE email = ?', [
+      userEmail,
+    ]);
     return res.status(200).json(updatedUser);
   } catch (error) {
     console.error('Error updating metrics:', error);
@@ -730,30 +734,28 @@ app.patch('/api/user/metrics', async (req: Request, res: Response) => {
   }
 });
 
-
-
 app.get('/api/calories-burned', async (req: Request, res: Response) => {
   try {
-      console.log("Burn handler");
-      const activity = req.query.activity as string;
-      if (!activity) {
-          return res.status(400).json({ error: 'Activity parameter is required' });
-      }
+    console.log('Burn handler');
+    const activity = req.query.activity as string;
+    if (!activity) {
+      return res.status(400).json({ error: 'Activity parameter is required' });
+    }
 
-      // Actual API call
-      const api_url = `${BURN_API_URL}?activity=${encodeURIComponent(activity)}`;
-      
-      const response = await axios.get(api_url, {
-          headers: { 'X-Api-Key': BURN_API_KEY },
-      });
-      
-      if (response.status === 200) {
-          res.json(response.data);
-      } else {
-          res.status(response.status).json({ error: response.data });
-      }
+    // Actual API call
+    const api_url = `${BURN_API_URL}?activity=${encodeURIComponent(activity)}`;
 
-      // Simulate API response for testing
+    const response = await axios.get(api_url, {
+      headers: { 'X-Api-Key': BURN_API_KEY },
+    });
+
+    if (response.status === 200) {
+      res.json(response.data);
+    } else {
+      res.status(response.status).json({ error: response.data });
+    }
+
+    // Simulate API response for testing
     //   const simulatedResponse = {
     //     data: [
     //         {
@@ -770,10 +772,9 @@ app.get('/api/calories-burned', async (req: Request, res: Response) => {
     //     config: {},
     // };
     // res.json(simulatedResponse.data);
-
   } catch (error) {
-      console.error('Error fetching calories burned data:', error);
-      res.status(500).json({ error: 'Failed to fetch calories burned data' });
+    console.error('Error fetching calories burned data:', error);
+    res.status(500).json({ error: 'Failed to fetch calories burned data' });
   }
 });
 

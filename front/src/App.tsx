@@ -27,12 +27,11 @@ import LandingPage from './LandingPage/LandingPage';
 import LogoutButton from './components/LogoutButton';
 import { useAuth } from './LandingPage/authUtils';
 import WorkoutPage from './workouts/Workout';
-import MealPlan from './Meals/MealPlan';
 import { AccessDenied, NotFound } from './components/error';
 
 import FlagIcon from '@mui/icons-material/Flag';
 import Goals from './progresspage/Goals';
-
+import UserMealPlans from './Meals/UserMealPlan';
 
 // Drawer width
 const drawerWidth = 240;
@@ -100,7 +99,6 @@ function App() {
               </Typography>
             </Toolbar>
             <List>
-
               <ListItemButton component={Link} to="/dashboard">
                 <ListItemIcon>
                   <DashboardIcon />
@@ -124,11 +122,10 @@ function App() {
 
               <ListItemButton component={Link} to="/goals">
                 <ListItemIcon>
-                  <FlagIcon  />
+                  <FlagIcon />
                 </ListItemIcon>
                 <ListItemText primary="My Goals" />
               </ListItemButton>
-
             </List>
           </Drawer>
 
@@ -145,9 +142,9 @@ function App() {
             <Routes>
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/food-dash" element={<FoodDash />} />
-              <Route path="/meals" element={<MealPlan />} />
+              <Route path="/meals" element={<UserMealPlans />} />
               <Route path="/workouts" element={<WorkoutPage />} />
-              <Route path="/goals" element={<Goals/>} />
+              <Route path="/goals" element={<Goals />} />
 
               {/* Redirect to Dashboard if user is logged in */}
               <Route path="*" element={<Navigate to="/dashboard" />} />
