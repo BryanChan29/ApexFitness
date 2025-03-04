@@ -7,8 +7,6 @@ import {
 } from 'react-router-dom';
 import {
   Box,
-  CssBaseline,
-  AppBar,
   Toolbar,
   Typography,
   Drawer,
@@ -27,6 +25,7 @@ import LandingPage from './LandingPage/LandingPage';
 import LogoutButton from './components/LogoutButton';
 import { useAuth } from './LandingPage/authUtils';
 import WorkoutPage from './workouts/Workout';
+import './App.css';
 import { AccessDenied, NotFound } from './components/error';
 
 import FlagIcon from '@mui/icons-material/Flag';
@@ -34,7 +33,7 @@ import Goals from './progresspage/Goals';
 import UserMealPlans from './Meals/UserMealPlan';
 
 // Drawer width
-const drawerWidth = 240;
+const drawerWidth = 125;
 
 function App() {
   const isAuthenticated = useAuth();
@@ -65,21 +64,6 @@ function App() {
         <LandingPage />
       ) : (
         <Box sx={{ display: 'flex' }}>
-          <CssBaseline />
-
-          {/* Top AppBar */}
-          <AppBar
-            position="fixed"
-            sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}
-          >
-            <Toolbar sx={{ display: 'flex', justifyContent: 'space-between' }}>
-              <Typography variant="h6" noWrap component="div">
-                Nutrition Tracker
-              </Typography>
-              <LogoutButton />
-            </Toolbar>
-          </AppBar>
-
           {/* Permanent Sidebar Drawer */}
           <Drawer
             variant="permanent"
@@ -89,43 +73,103 @@ function App() {
               [`& .MuiDrawer-paper`]: {
                 width: drawerWidth,
                 boxSizing: 'border-box',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
               },
             }}
             open
           >
             <Toolbar>
-              <Typography variant="h6" noWrap>
-                My App
-              </Typography>
+              <Box
+                component="img"
+                sx={{
+                  height: 85,
+                  width: 85,
+                }}
+                alt="Logo"
+                src="/public/logo.png"
+              />
             </Toolbar>
-            <List>
-              <ListItemButton component={Link} to="/dashboard">
-                <ListItemIcon>
+
+            <List
+              sx={{ display: 'flex', flexDirection: 'column', width: '100%' }}
+            >
+              <ListItemButton
+                component={Link}
+                to="/dashboard"
+                sx={{
+                  justifyContent: 'center',
+                  padding: 2,
+                  flexDirection: 'column',
+                }}
+              >
+                <ListItemIcon
+                  sx={{ display: 'flex', justifyContent: 'center' }}
+                >
                   <DashboardIcon />
                 </ListItemIcon>
                 <ListItemText primary="Dashboard" />
               </ListItemButton>
-
-              <ListItemButton component={Link} to="/meals">
-                <ListItemIcon>
+              <ListItemButton
+                component={Link}
+                to="/meals"
+                sx={{
+                  justifyContent: 'center',
+                  padding: 2,
+                  flexDirection: 'column',
+                }}
+              >
+                <ListItemIcon
+                  sx={{ display: 'flex', justifyContent: 'center' }}
+                >
                   <RestaurantMenuIcon />
                 </ListItemIcon>
-                <ListItemText primary="Meals" />
+                <ListItemText primary="Meal Plans" />
               </ListItemButton>
-
-              <ListItemButton component={Link} to="/workouts">
-                <ListItemIcon>
+              <ListItemButton
+                component={Link}
+                to="/workouts"
+                sx={{
+                  justifyContent: 'center',
+                  padding: 2,
+                  flexDirection: 'column',
+                }}
+              >
+                <ListItemIcon
+                  sx={{ display: 'flex', justifyContent: 'center' }}
+                >
                   <FitnessCenterIcon />
                 </ListItemIcon>
-                <ListItemText primary="Workouts" />
+                <ListItemText
+                  primary="Workouts"
+                  sx={{ textAlign: 'center', marginTop: 1 }}
+                />
               </ListItemButton>
 
-              <ListItemButton component={Link} to="/goals">
-                <ListItemIcon>
+              <ListItemButton
+                component={Link}
+                to="/goals"
+                sx={{
+                  justifyContent: 'center',
+                  padding: 2,
+                  flexDirection: 'column',
+                }}
+              >
+                <ListItemIcon
+                  sx={{ display: 'flex', justifyContent: 'center' }}
+                >
                   <FlagIcon />
                 </ListItemIcon>
-                <ListItemText primary="My Goals" />
+                <ListItemText
+                  primary="My Goals"
+                  sx={{ textAlign: 'center', marginTop: 1 }}
+                />
               </ListItemButton>
+
+              <Box sx={{ paddingBottom: 2 }}>
+                <LogoutButton />
+              </Box>
             </List>
           </Drawer>
 
