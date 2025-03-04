@@ -254,6 +254,39 @@ const searchResultsModal = (
       </Grid>
 
       {strengthModal}
+
+        <Grid item xs={12} md={4}>
+          <Paper
+            sx={{
+              p: 2,
+              display: 'flex',
+              flexDirection: 'column',
+              width: '30%',
+              height: '100%',
+              borderRadius: 10,
+              marginTop: 5,
+            }}
+          >
+            <Typography variant="subtitle1" color="text.secondary">
+              Last logged weight
+            </Typography>
+            <Typography variant="body2">Wed, Feb 13, 2025</Typography>
+
+            <Typography variant="h2" sx={{ mt: 2, mb: 1, fontWeight: 'bold' }}>
+              211.5 lbs
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Goal: 200 lbs
+            </Typography>
+
+            {/* Button at bottom */}
+            <Box sx={{ mt: 'auto' }}>
+                <Button variant="contained" color="primary" className="primary-button">
+                Log New Weight
+                </Button>
+            </Box>
+          </Paper>
+        </Grid>
     </Container>
   );
 };
