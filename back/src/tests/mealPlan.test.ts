@@ -157,6 +157,19 @@ describe('Meal Plan API', () => {
     expect(foodNames).toContain('Grilled Salmon');
   });
 
+  test('GET /meal_plan/:id - Returns 400 for invalid meal plan ID', async () => {
+    await addToDb();
+    try {
+      await axios.get(`${baseUrl}/meal_plan/invalidId`);
+    } catch (error) {
+      const caughtError = error as AxiosError;
+      expect(caughtError.response?.status).toBe(400);
+      expect(caughtError.response?.data).toEqual({
+        error: 'Invalid Meal Plan ID',
+      });
+    }
+  });
+
   test('GET /meal_plan/:id - Returns 404 if no meals found', async () => {
     try {
       await axios.get(`${baseUrl}/meal_plan/100`);

@@ -6,10 +6,11 @@ import LogFood from './pages/LogFood';
 import LandingPage from './LandingPage/LandingPage';
 import { useAuth } from './LandingPage/authUtils';
 import WorkoutPage from './workouts/Workout';
-import MealPlan from './Meals/MealPlan';
 import { AccessDenied, NotFound } from './components/error';
 import Goals from './progresspage/Goals';
 import './App.css';
+import UserMealPlans from './Meals/UserMealPlan';
+import NewMealPlan from './Meals/NewMealPlan';
 
 
 function App() {
@@ -48,9 +49,10 @@ function App() {
             <Toolbar />
             <Routes>
               <Route path="/dashboard" element={<ProgressDashboard />} />
-              <Route path="/meals" element={<MealPlan />} />
+              <Route path="/meals" element={<UserMealPlans />} />
               <Route path="/workouts" element={<WorkoutPage />} />
-              <Route path="/goals" element={<Goals />} />
+              <Route path="/goals" element={<Goals/>} />
+              <Route path="/new-meal-plan" element={<NewMealPlan />} />
               <Route path="/add-food" element={<LogFood />} />
 
               {/* Redirect to Dashboard if user is logged in */}
