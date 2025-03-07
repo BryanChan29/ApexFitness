@@ -786,6 +786,26 @@ app.get('/api/calories-burned', async (req: Request, res: Response) => {
   }
 });
 
+app.post('/api/daily_food', async (req: Request, res: Response) => {
+  const { user_id, meal_type, name, quantity, calories, carbs, fat, protein, sodium, sugar, date } = req.body;
+
+  if (!user_id || !meal_type || !name || !calories || !carbs || !fat || !protein || !sodium || !sugar || !date || !quantity) {
+    return res.status(400).json({ error: 'All fields are required' });
+  }
+
+  try {
+    const statement = await db.prepare(
+      'INSERT INTO daily_food (user_id, meal_type, name, quantity, calories, carbs, fat, protein, sodium, sugar, date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+    );
+    const result = await statement.run(user_id, meal_type, name, quantity, calories, carbs, fat, protein, sodium, sugar, date);
+
+    return res.status(201).json({ message: 'Daily food item added successfully', id: result.lastID });
+  } catch (error) {
+    console.error('Error inserting daily food item:', error);
+    return res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
 // run server
 let port = 3000;
 let host = 'localhost';
