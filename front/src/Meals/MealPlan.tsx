@@ -192,9 +192,8 @@ function MealPlan() {
         </div>
       </TableContainer>
       <Button
-        variant="contained"
-        color="primary"
-        style={{ marginTop: '20px', borderRadius: '25px' }}
+        className='primary-button'
+        style={{ marginTop: '25px' }}
       >
         Add New Meal Plan
       </Button>

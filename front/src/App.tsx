@@ -2,7 +2,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { Box, Toolbar, CircularProgress } from '@mui/material';
 import Sidebar from './components/Sidebar';
 import ProgressDashboard from './progresspage/Dashboard';
-import FoodDash from './pages/FoodDash';
+import LogFood from './pages/LogFood';
 import LandingPage from './LandingPage/LandingPage';
 import { useAuth } from './LandingPage/authUtils';
 import WorkoutPage from './workouts/Workout';
@@ -48,10 +48,10 @@ function App() {
             <Toolbar />
             <Routes>
               <Route path="/dashboard" element={<ProgressDashboard />} />
-              <Route path="/food-dash" element={<FoodDash />} />
               <Route path="/meals" element={<MealPlan />} />
               <Route path="/workouts" element={<WorkoutPage />} />
               <Route path="/goals" element={<Goals />} />
+              <Route path="/add-food" element={<LogFood />} />
 
               {/* Redirect to Dashboard if user is logged in */}
               <Route path="*" element={<Navigate to="/dashboard" />} />

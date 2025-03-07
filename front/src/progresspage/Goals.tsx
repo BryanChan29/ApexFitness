@@ -245,6 +245,7 @@ const WeightMetricsUI: React.FC = () => {
           size="large"
           sx={{ px: 4, py: 1.5, fontWeight: 'bold' }}
           onClick={handleSave}
+          className='primary-button'
         >
           Save Metrics
         </Button>

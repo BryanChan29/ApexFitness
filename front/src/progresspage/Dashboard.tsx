@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { Container, Paper, Typography, Box } from '@mui/material';
+import { Link } from 'react-router-dom'; 
+import { Container, Paper, Typography, Box, Button } from '@mui/material';
 import { Line } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title as ChartTitle, Tooltip, Legend } from 'chart.js';
 import CustomDatePicker from '../components/DatePicker';
 import NutritionTable from '../components/NutritionTable';
+import axios from 'axios';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, ChartTitle, Tooltip, Legend);
 
@@ -12,10 +14,34 @@ interface ProgressEntry {
   weight: number;
 }
 
+interface DailyFoodItem {
+  id: number;
+  name: string;
+  meal_type: string;
+  quantity: string;
+  calories: number;
+  carbs: number;
+  fat: number;
+  protein: number;
+  sodium: number;
+  sugar: number;
+  date: string;
+}
+
 const ProgressDashboard: React.FC = () => {
   const [progressData, setProgressData] = useState<ProgressEntry[]>([]);
+  const [breakfastData, setBreakfastData] = useState<DailyFoodItem[]>([]);
 
   useEffect(() => {
+    axios.get('/api/daily_food')
+    .then(response => {
+      const foodItems = response.data.result.filter((item: DailyFoodItem) => item.meal_type === 'breakfast');
+      setBreakfastData(foodItems);
+    })
+    .catch(error => {
+      console.error('Error fetching daily food data:', error);
+    });
+
     const dummyData: ProgressEntry[] = [
       { date: 'May', weight: 225 },
       { date: 'Jun', weight: 223 },
@@ -76,35 +102,61 @@ const ProgressDashboard: React.FC = () => {
           </Paper>
         </Box>
 
-        <Box sx={{ mb: 4, width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-          <Typography variant="h3" sx={{ mb: 2, fontWeight: 'bold' }}>
-            Breakfast
-          </Typography>
-          <NutritionTable />
-          <Box sx={{ mb: 4 }} />
+        <Box
+            sx={{
+              mb: 4,
+              width: '100%',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'flex-start',
+            }}
+          >
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%', mb: 2 }}>
+            <Typography variant="h3" sx={{ fontWeight: 'bold' }}>
+              Breakfast
+            </Typography>
+            <Link to="/add-food?mealType=breakfast">
+              <Button variant="contained" className='primary-button'>Add Breakfast</Button>
+            </Link>
+          </Box>
+          
+          <NutritionTable foodData={breakfastData} />
 
-          <Typography variant="h3" sx={{ mb: 2, fontWeight: 'bold' }}>
-            Lunch
-          </Typography>
-          <NutritionTable />
-          <Box sx={{ mb: 4 }} />
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%', mb: 2 }}>
+            <Typography variant="h3" sx={{ fontWeight: 'bold' }}>
+              Lunch
+            </Typography>
+            <Link to="/add-food?mealType=breakfast">
+              <Button variant="contained" className='primary-button'>Add Lunch</Button>
+            </Link>
+          </Box>
+          <NutritionTable foodData={[]} />
 
-          <Typography variant="h3" sx={{ mb: 2, fontWeight: 'bold' }}>
-            Dinner
-          </Typography>
-          <NutritionTable />
-          <Box sx={{ mb: 4 }} />
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%', mb: 2 }}>
+            <Typography variant="h3" sx={{ fontWeight: 'bold' }}>
+              Dinner
+            </Typography>
+            <Link to="/add-food?mealType=breakfast">
+              <Button variant="contained" className='primary-button'>Add Dinner</Button>
+            </Link>
+          </Box>
+          <NutritionTable foodData={[]} />
 
-          <Typography variant="h3" sx={{ mb: 2, fontWeight: 'bold' }}>
-            Snacks
-          </Typography>
-          <NutritionTable />
-          <Box sx={{ mb: 4 }} />
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%', mb: 2 }}>
+            <Typography variant="h3" sx={{ fontWeight: 'bold' }}>
+              Snacks
+            </Typography>
+            <Link to="/add-food?mealType=breakfast">
+              <Button variant="contained" className='primary-button'>Add Snack</Button>
+            </Link>
+          </Box>
+          
+          <NutritionTable foodData={[]} />
 
           <Typography variant="h3" sx={{ mb: 2, fontWeight: 'bold' }}>
             Total
           </Typography>
-          <NutritionTable />
+          <NutritionTable foodData={[]} />
         </Box>
       </Box>
     </Container>

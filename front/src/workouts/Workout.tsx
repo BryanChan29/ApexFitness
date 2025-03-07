@@ -211,7 +211,7 @@ const searchResultsModal = (
               </Table>
             </TableContainer>
             <Box sx={{ mt: 2 }}>
-              <Button variant="contained" color="primary" onClick={handleOpenCardioModal}>Add Cardio Workout</Button>
+              <Button variant="contained" color="primary" className='primary-button' onClick={handleOpenCardioModal}>Add Cardio Workout</Button>
             </Box>
           </Paper>
         </Grid>
@@ -247,7 +247,7 @@ const searchResultsModal = (
               </Table>
             </TableContainer>
             <Box sx={{ mt: 2 }}>
-              <Button variant="contained" color="primary" onClick={handleOpenStrengthModal}>Add Strength Workout</Button>
+              <Button variant="contained" color="primary" onClick={handleOpenStrengthModal} className='primary-button'>Add Strength Workout</Button>
             </Box>
           </Paper>
         </Grid>

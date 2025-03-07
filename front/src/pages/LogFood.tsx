@@ -1,9 +1,11 @@
-import { Box, TextField, Button, InputAdornment } from "@mui/material";
+import { Box, TextField, Button, InputAdornment, Typography } from "@mui/material";
 import { useState, useEffect } from "react";
+import { useLocation, useNavigate } from 'react-router-dom';
 import axios from "axios";
 import { z } from "zod";
 import searchIcon from "../assets/search.png";
 import PopupNutrition from '../components/PopUpNutrition.tsx';
+import NutritionTable from "../components/NutritionTable.tsx";
 
 const FoodItemSchema = z.object({
   food_name: z.string(),
@@ -62,7 +64,7 @@ type SearchResults = z.infer<typeof SearchResultsSchema>;
 type FoodItem = z.infer<typeof FoodItemSchema>;
 type FoodDetail = z.infer<typeof FoodDetailSchema>;
 
-const FoodDash = () => {
+const LogFood = () => {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchResults>({});
   const [showSearchButton, setShowSearchButton] = useState(false);
@@ -73,6 +75,16 @@ const FoodDash = () => {
   const [openDialog, setOpenDialog] = useState(false);
   const [fullNutrition, setFullNutrition] = useState<z.infer<typeof NutrientSchema> | null>(null);
   const [servingSizes, setServingSizes] = useState<string[]>([]);
+  const location = useLocation();
+  const navigate = useNavigate();
+  const searchParams = new URLSearchParams(location.search);
+  const mealType = searchParams.get('mealType');
+
+  useEffect(() => {
+    if (!mealType || !["breakfast", "lunch", "dinner", "snack"].includes(mealType)) {
+      navigate('/not-found');
+    }
+  }, [mealType, navigate]); 
 
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const value = event.target.value;
@@ -149,7 +161,6 @@ const FoodDash = () => {
     const selectedSize = event.target.value as string;
     setServingSize(selectedSize);
 
-    // Find the corresponding nutrition information for the selected serving size
     if (foodDetail) {
       const servings = foodDetail.food.servings.serving;
       const selectedServing = Array.isArray(servings)
@@ -159,6 +170,7 @@ const FoodDash = () => {
         : null;
 
       if (selectedServing) {
+        console.log("Selected Serving:", selectedServing); 
         setFullNutrition(selectedServing);
       }
     }
@@ -167,6 +179,33 @@ const FoodDash = () => {
   const handleNumServingsChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const value = event.target.value;
     setNumServings(value);
+  };
+
+  const handleAddFood = async () => {
+    if (!fullNutrition || !mealType) {
+      console.error("No nutrition data or meal type selected");
+      return;
+    }
+  
+    try {
+      const response = await axios.post('/api/daily_food', {
+        user_id: "a71e0ca8-a4c3-40aa-b719-dddd0225f207",
+        meal_type: mealType,
+        name: selectedFood?.food_name || "Unknown",
+        calories: fullNutrition.calories,
+        carbs: fullNutrition.carbohydrate,
+        fat: fullNutrition.fat,
+        protein: fullNutrition.protein,
+        sodium: fullNutrition.sodium,
+        sugar: fullNutrition.sugar,
+        date: new Date().toISOString().split("T")[0],
+        quantity: `${numServings} x ${fullNutrition.serving_description}`,
+      });
+  
+      console.log("Food added successfully:", response.data);
+    } catch (error) {
+      console.error("Error adding food:", error);
+    }
   };
 
   useEffect(() => {
@@ -210,6 +249,10 @@ const FoodDash = () => {
         padding: "20px",
       }}
     >
+      <Typography variant="h4" component="h1" sx={{ marginBottom: "20px" }}>
+        {mealType ? `Add Food for ${mealType.charAt(0).toUpperCase() + mealType.slice(1)}` : "Add Food"}
+      </Typography>
+
       <TextField
         variant="outlined"
         placeholder="Search food database..."
@@ -255,147 +298,156 @@ const FoodDash = () => {
         }}
       />
 
-      <Box
-        sx={{
-          display: "flex",
-          flexDirection: "row",
-          gap: "20px",
-        }}
-      >
+      {results.foods?.food && results.foods.food.length > 0 && (
         <Box
           sx={{
-            width: "40%",
-            padding: "10px",
-            backgroundColor: "white",
-            borderRadius: "30px",
-            boxShadow: "0px 4px 12px rgba(0, 0, 0, 0.1)",
-            overflowY: "auto",
-            maxHeight: "400px",
+            display: "flex",
+            flexDirection: "row",
+            gap: "20px",
           }}
         >
-          {results.foods?.food?.map((result, index) => (
-            <Box
-              key={index}
-              sx={{
-                padding: "10px",
-                borderBottom: "1px solid #ccc",
-                cursor: "pointer",
-                backgroundColor:
-                  selectedFood?.food_id === result.food_id
-                    ? "#b9e1fc"
-                    : "transparent",
-                "&:hover": {
-                  backgroundColor: "#d9f0ff",
-                },
-                borderRadius: "15px",
-              }}        
-              onClick={() => handleFoodClick(result)}
-            >
-                <Box>
-                  <Box>{result.food_name}</Box>
-                  <Box sx={{ color: "gray", fontSize: "12px" }}>
-                  {result.brand_name && `${result.brand_name} - `}
-                  {result.food_description}
-                  </Box>
-                </Box>
-            </Box>
-          ))}
-        </Box>
-
-        <Box
-          sx={{
-            width: "60%",
-            padding: "10px",
-            backgroundColor: "white",
-            borderRadius: "30px",
-            boxShadow: "0px 4px 12px rgba(0, 0, 0, 0.1)",
-            textAlign: "left",
-          }}
-        >
-          {selectedFood ? (
-            <>
-              <Box sx={{ fontWeight: "bold", fontSize: "32px" }}>
-                {selectedFood.food_name}
-              </Box>
-
-              <Box sx={{ marginTop: "20px", display: "flex", flexDirection: "column", gap: 2 }}>
-                <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                  <Box sx={{ fontWeight: "bold" }}>Serving Size</Box>
-                  <TextField
-                    select
-                    variant="outlined"
-                    value={servingSize}
-                    onChange={handleServingSizeChange}
-                    SelectProps={{
-                      native: true,
-                    }}
-                    sx={{
-                      backgroundColor: "#ffffff",
-                      width: "300px",
-                    }}
-                  >
-                    {servingSizes.map((size, index) => (
-                      <option key={index} value={size}>
-                        {size}
-                      </option>
-                    ))}
-                  </TextField>
-                </Box>
-
-                <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                  <Box sx={{ fontWeight: "bold" }}>Number of Servings</Box>
-                  <TextField
-                    type="number"
-                    variant="outlined"
-                    value={numServings}
-                    onChange={handleNumServingsChange}
-                    inputProps={{ min: "1", style: { textAlign: "center", width: "50px" } }}
-                  />
-                </Box>
-
-                {fullNutrition && (
-                  <Box sx={{ marginTop: "20px" }}>
-                    <Box sx={{ fontSize: "18px", fontWeight: "bold" }}>Nutritional Information</Box>
-                    <Box sx={{ display: "flex", flexDirection: "column", gap: "5px", marginTop: "10px" }}>
-                      <Box>Calories: {Math.round(fullNutrition.calories)}</Box>
-                      <Box>Carbs: {Math.round(fullNutrition.carbohydrate)}g</Box>
-                      <Box>Fat: {Math.round(fullNutrition.fat)}g</Box>
-                      <Box>Protein: {Math.round(fullNutrition.protein)}g</Box>
+          <Box
+            sx={{
+              width: "40%",
+              padding: "10px",
+              backgroundColor: "white",
+              borderRadius: "30px",
+              boxShadow: "0px 4px 12px rgba(0, 0, 0, 0.1)",
+              overflowY: "auto",
+              maxHeight: "400px",
+            }}
+          >
+            {results.foods?.food?.map((result, index) => (
+              <Box
+                key={index}
+                sx={{
+                  padding: "10px",
+                  borderBottom: "1px solid #ccc",
+                  cursor: "pointer",
+                  backgroundColor:
+                    selectedFood?.food_id === result.food_id
+                      ? "#b9e1fc"
+                      : "transparent",
+                  "&:hover": {
+                    backgroundColor: "#d9f0ff",
+                  },
+                  borderRadius: "15px",
+                }}        
+                onClick={() => handleFoodClick(result)}
+              >
+                  <Box>
+                    <Box>{result.food_name}</Box>
+                    <Box sx={{ color: "gray", fontSize: "12px" }}>
+                    {result.brand_name && `${result.brand_name} - `}
+                    {result.food_description}
                     </Box>
                   </Box>
-                )}
-
-                <Box sx={{ marginTop: "20px" }}>
-                  <Button
-                    variant="contained"
-                    onClick={() => setOpenDialog(true)}
-                    sx={{
-                      width: "20%",
-                      borderRadius: "30px",
-                      padding: "10px",
-                      backgroundColor: "#000000",
-                      color: "#fff",
-                    }}
-                  >
-                    Full Nutrition
-                  </Button>
-                </Box>
-                <PopupNutrition
-                  open={openDialog}
-                  onClose={() => setOpenDialog(false)}
-                  nutritionData={fullNutrition}
-                />
               </Box>
-            </>
-          ) : (
-            <Box sx={{ fontSize: "18px", color: "#888" }}>
-              Select a food item to see more details.
-            </Box>
-          )}
+            ))}
+          </Box>
+
+          <Box
+            sx={{
+              width: "60%",
+              padding: "10px",
+              backgroundColor: "white",
+              borderRadius: "30px",
+              boxShadow: "0px 4px 12px rgba(0, 0, 0, 0.1)",
+              textAlign: "left",
+            }}
+          >
+            {selectedFood ? (
+              <>
+                <Box sx={{ fontWeight: "bold", fontSize: "32px" }}>
+                  {selectedFood.food_name}
+                </Box>
+
+                <Box sx={{ marginTop: "20px", display: "flex", flexDirection: "column", gap: 2 }}>
+                  <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                    <Box sx={{ fontWeight: "bold" }}>Serving Size</Box>
+                    <TextField
+                      select
+                      variant="outlined"
+                      value={servingSize}
+                      onChange={handleServingSizeChange}
+                      SelectProps={{
+                        native: true,
+                      }}
+                      sx={{
+                        backgroundColor: "#ffffff",
+                        width: "300px",
+                      }}
+                    >
+                      {servingSizes.map((size, index) => (
+                        <option key={index} value={size}>
+                          {size}
+                        </option>
+                      ))}
+                    </TextField>
+                  </Box>
+
+                  <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                    <Box sx={{ fontWeight: "bold" }}>Number of Servings</Box>
+                    <TextField
+                      type="number"
+                      variant="outlined"
+                      value={numServings}
+                      onChange={handleNumServingsChange}
+                      inputProps={{ min: "1", style: { textAlign: "center", width: "50px" } }}
+                    />
+                  </Box>
+
+                  {fullNutrition && (
+                    <Box sx={{ marginTop: "20px" }}>
+                      <Box sx={{ fontSize: "18px", fontWeight: "bold" }}>Nutritional Information</Box>
+                      <Box sx={{ display: "flex", flexDirection: "column", gap: "5px", marginTop: "10px" }}>
+                        <Box>Calories: {Math.round(fullNutrition.calories)}</Box>
+                        <Box>Carbs: {Math.round(fullNutrition.carbohydrate)}g</Box>
+                        <Box>Fat: {Math.round(fullNutrition.fat)}g</Box>
+                        <Box>Protein: {Math.round(fullNutrition.protein)}g</Box>
+                      </Box>
+                    </Box>
+                  )}
+
+                  <Box sx={{ marginTop: "20px", display: "flex", justifyContent: "space-between" }}>
+                    <Button
+                      variant="contained"
+                      onClick={() => setOpenDialog(true)}
+                      className="primary-button"
+                    >
+                      Full Nutrition
+                    </Button>
+
+                    <Button
+                      variant="contained"
+                      onClick={handleAddFood}
+                      className="primary-button"
+                    >
+                      Add Food
+                    </Button>
+                  </Box>
+                  <PopupNutrition
+                    open={openDialog}
+                    onClose={() => setOpenDialog(false)}
+                    nutritionData={fullNutrition}
+                  />
+                </Box>
+              </>
+            ) : (
+              <Box sx={{ fontSize: "18px", color: "#888" }}>
+                Select a food item to see more details.
+              </Box>
+            )}
+          </Box>
         </Box>
+      )}
+
+      <Box sx={{mb: 4, mt: 4, width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'flex-start'}}>
+          <Typography variant="h3" sx={{ mb: 2, fontWeight: 'bold' }}>Saved Meals</Typography>
+          <NutritionTable foodData={[]} />
       </Box>
     </Box>
   );
 };
 
-export default FoodDash;
+export default LogFood;
