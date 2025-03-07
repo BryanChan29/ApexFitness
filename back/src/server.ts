@@ -443,7 +443,7 @@ requestRouter.get('/daily_food', async (req, res) => {
 });
 
 requestRouter.get('/meal_plan/:id', async (req, res) => {
-  let result: { day_of_week: string; daily_foods: string }[];
+  let result: { day_of_week: string; daily_foods: string; name: string }[];
   const mealPlanId = parseInt(req.params.id, 10);
   if (isNaN(mealPlanId)) {
     return res.status(400).json({ error: 'Invalid Meal Plan ID' });
@@ -452,6 +452,7 @@ requestRouter.get('/meal_plan/:id', async (req, res) => {
   const query = `
     SELECT 
         mpi.day_of_week,
+        mp.name,
         json_group_array(
             json_object(
                 'name', df.name,
@@ -481,6 +482,7 @@ requestRouter.get('/meal_plan/:id', async (req, res) => {
     }
 
     const formattedMealPlan: Partial<UIFormattedMealPlan> = {};
+    const mealPlanName = result[0].name;
 
     result.forEach((row) => {
       const dayOfWeek =
@@ -505,7 +507,7 @@ requestRouter.get('/meal_plan/:id', async (req, res) => {
       });
     });
 
-    return res.json({ result: formattedMealPlan });
+    return res.json({ name: mealPlanName, result: formattedMealPlan });
   } catch (err: any) {
     console.error(err);
     return res.status(500).json({ error: err.toString() });

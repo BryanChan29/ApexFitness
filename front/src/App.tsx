@@ -31,6 +31,7 @@ import { AccessDenied, NotFound } from './components/error';
 import FlagIcon from '@mui/icons-material/Flag';
 import Goals from './progresspage/Goals';
 import UserMealPlans from './Meals/UserMealPlan';
+import NewMealPlan from './Meals/NewMealPlan';
 
 // Drawer width
 const drawerWidth = 125;
@@ -189,6 +190,7 @@ function App() {
               <Route path="/meals" element={<UserMealPlans />} />
               <Route path="/workouts" element={<WorkoutPage />} />
               <Route path="/goals" element={<Goals />} />
+              <Route path="/new-meal-plan" element={<NewMealPlan />} />
 
               {/* Redirect to Dashboard if user is logged in */}
               <Route path="*" element={<Navigate to="/dashboard" />} />

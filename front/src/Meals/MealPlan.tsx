@@ -17,9 +17,10 @@ import { UIDailyMeal, UIFormattedMealPlan } from '@apex/shared';
 
 interface MealPlanProps {
   mealPlan: UIFormattedMealPlan;
+  mealPlanName: string;
 }
 
-function MealPlan({ mealPlan }: MealPlanProps) {
+function MealPlan({ mealPlan, mealPlanName }: MealPlanProps) {
   const [isPublic, setIsPublic] = useState<boolean>(false);
 
   function handlePublicModifier(
@@ -51,16 +52,19 @@ function MealPlan({ mealPlan }: MealPlanProps) {
   );
 
   function shareMealPlan(): void {
-    console.log('Not yet implemented');
+    console.log('TODO: Not yet implemented');
   }
 
   return (
     <div style={{ padding: '20px' }}>
       <Typography variant="h4" gutterBottom>
-        Meal Plan
+        {mealPlanName}
       </Typography>
-      <TableContainer component={Paper} sx={{ borderRadius: '20px', overflow: 'hidden' }}>
-      <Table>
+      <TableContainer
+        component={Paper}
+        sx={{ borderRadius: '20px', overflow: 'hidden' }}
+      >
+        <Table>
           <TableHead>
             <TableRow>
               <TableCell>
@@ -122,13 +126,6 @@ function MealPlan({ mealPlan }: MealPlanProps) {
           )}
         </div>
       </TableContainer>
-      <Button
-        variant="contained"
-        color="primary"
-        style={{ marginTop: '20px', borderRadius: '25px' }}
-      >
-        Add New Meal Plan
-      </Button>
     </div>
   );
 }
