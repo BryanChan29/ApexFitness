@@ -26,12 +26,12 @@ import LogoutButton from './components/LogoutButton';
 import { useAuth } from './LandingPage/authUtils';
 import WorkoutPage from './workouts/Workout';
 import './App.css';
-import MealPlan from './Meals/MealPlan';
 import { AccessDenied, NotFound } from './components/error';
 
 import FlagIcon from '@mui/icons-material/Flag';
 import Goals from './progresspage/Goals';
-
+import UserMealPlans from './Meals/UserMealPlan';
+import NewMealPlan from './Meals/NewMealPlan';
 
 // Drawer width
 const drawerWidth = 125;
@@ -65,7 +65,6 @@ function App() {
         <LandingPage />
       ) : (
         <Box sx={{ display: 'flex' }}>
-
           {/* Permanent Sidebar Drawer */}
           <Drawer
             variant="permanent"
@@ -84,23 +83,31 @@ function App() {
           >
             <Toolbar>
               <Box
-              component="img"
-              sx={{
-                height: 85,
-                width: 85,
-              }}
-              alt="Logo"
-              src="/public/logo.png"
+                component="img"
+                sx={{
+                  height: 85,
+                  width: 85,
+                }}
+                alt="Logo"
+                src="/public/logo.png"
               />
             </Toolbar>
 
-            <List sx={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
+            <List
+              sx={{ display: 'flex', flexDirection: 'column', width: '100%' }}
+            >
               <ListItemButton
                 component={Link}
                 to="/dashboard"
-                sx={{ justifyContent: 'center', padding: 2, flexDirection: 'column'}}
+                sx={{
+                  justifyContent: 'center',
+                  padding: 2,
+                  flexDirection: 'column',
+                }}
               >
-                <ListItemIcon sx={{ display: 'flex', justifyContent: 'center' }}>
+                <ListItemIcon
+                  sx={{ display: 'flex', justifyContent: 'center' }}
+                >
                   <DashboardIcon />
                 </ListItemIcon>
                 <ListItemText primary="Dashboard" />
@@ -108,39 +115,62 @@ function App() {
               <ListItemButton
                 component={Link}
                 to="/meals"
-                sx={{ justifyContent: 'center', padding: 2, flexDirection: 'column'  }}
+                sx={{
+                  justifyContent: 'center',
+                  padding: 2,
+                  flexDirection: 'column',
+                }}
               >
-                <ListItemIcon sx={{ display: 'flex', justifyContent: 'center'}}>
+                <ListItemIcon
+                  sx={{ display: 'flex', justifyContent: 'center' }}
+                >
                   <RestaurantMenuIcon />
                 </ListItemIcon>
-                <ListItemText primary="Meal Plans"/>
+                <ListItemText primary="Meal Plans" />
               </ListItemButton>
               <ListItemButton
                 component={Link}
                 to="/workouts"
-                sx={{ justifyContent: 'center', padding: 2, flexDirection: 'column'  }}
+                sx={{
+                  justifyContent: 'center',
+                  padding: 2,
+                  flexDirection: 'column',
+                }}
               >
-                <ListItemIcon sx={{ display: 'flex', justifyContent: 'center'}}>
+                <ListItemIcon
+                  sx={{ display: 'flex', justifyContent: 'center' }}
+                >
                   <FitnessCenterIcon />
                 </ListItemIcon>
-                <ListItemText primary="Workouts" sx={{ textAlign: 'center', marginTop: 1 }} />
+                <ListItemText
+                  primary="Workouts"
+                  sx={{ textAlign: 'center', marginTop: 1 }}
+                />
               </ListItemButton>
 
-                <ListItemButton
+              <ListItemButton
                 component={Link}
                 to="/goals"
-                sx={{ justifyContent: 'center', padding: 2, flexDirection: 'column' }}
+                sx={{
+                  justifyContent: 'center',
+                  padding: 2,
+                  flexDirection: 'column',
+                }}
+              >
+                <ListItemIcon
+                  sx={{ display: 'flex', justifyContent: 'center' }}
                 >
-                <ListItemIcon sx={{ display: 'flex', justifyContent: 'center' }}>
                   <FlagIcon />
                 </ListItemIcon>
-                <ListItemText primary="My Goals" sx={{ textAlign: 'center', marginTop: 1 }} />
-                </ListItemButton>
+                <ListItemText
+                  primary="My Goals"
+                  sx={{ textAlign: 'center', marginTop: 1 }}
+                />
+              </ListItemButton>
 
               <Box sx={{ paddingBottom: 2 }}>
                 <LogoutButton />
               </Box>
-
             </List>
           </Drawer>
 
@@ -157,9 +187,10 @@ function App() {
             <Routes>
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/food-dash" element={<FoodDash />} />
-              <Route path="/meals" element={<MealPlan />} />
+              <Route path="/meals" element={<UserMealPlans />} />
               <Route path="/workouts" element={<WorkoutPage />} />
-              <Route path="/goals" element={<Goals/>} />
+              <Route path="/goals" element={<Goals />} />
+              <Route path="/new-meal-plan" element={<NewMealPlan />} />
 
               {/* Redirect to Dashboard if user is logged in */}
               <Route path="*" element={<Navigate to="/dashboard" />} />
