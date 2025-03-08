@@ -475,7 +475,12 @@ const LogFood = ({ onAddMealItem }: { onAddMealItem?: (foodItem: any) => void })
         <Box sx={{ mb: 4, mt: 4, width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
         <Typography variant="h3" sx={{ mb: 2, fontWeight: 'bold' }}>Saved Meals</Typography>
-        <Button variant="contained" sx={{ mb: 2 }} className='primary-button'>
+        <Button 
+          variant="contained" 
+          sx={{ mb: 2 }} 
+          className='primary-button'
+          onClick={() => navigate('/new-meal?mealType=new-meal')}
+        >
           Add a New Meal
         </Button>
           </Box>
