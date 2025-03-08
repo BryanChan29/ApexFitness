@@ -1,14 +1,17 @@
-import React, { useState } from "react";
+import React from "react";
 import { IconButton, Box, Typography } from "@mui/material";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { format, addDays, subDays } from "date-fns";
 
-const CustomDatePicker: React.FC = () => {
-  const [selectedDate, setSelectedDate] = useState(new Date());
+interface CustomDatePickerProps {
+  selectedDate: Date;
+  setSelectedDate: (date: Date) => void;
+}
 
-  const handlePrevDay = () => setSelectedDate((prev) => subDays(prev, 1));
-  const handleNextDay = () => setSelectedDate((prev) => addDays(prev, 1));
+const CustomDatePicker: React.FC<CustomDatePickerProps> = ({ selectedDate, setSelectedDate }) => {
+  const handlePrevDay = () => setSelectedDate(subDays(selectedDate, 1));
+  const handleNextDay = () => setSelectedDate(addDays(selectedDate, 1));
 
   return (
     <Box
@@ -24,11 +27,11 @@ const CustomDatePicker: React.FC = () => {
         maxWidth: 300,
       }}
     >
-    <IconButton onClick={handlePrevDay} size="small">
-      <span className="material-symbols-rounded" style={{ color: "#757575" }}>
-        chevron_left
-      </span>
-    </IconButton>
+      <IconButton onClick={handlePrevDay} size="small">
+        <span className="material-symbols-rounded" style={{ color: "#757575" }}>
+          chevron_left
+        </span>
+      </IconButton>
 
       <DatePicker
         selected={selectedDate}
@@ -55,11 +58,11 @@ const CustomDatePicker: React.FC = () => {
         }
       />
 
-    <IconButton onClick={handleNextDay} size="small">
-      <span className="material-symbols-rounded" style={{ color: "#757575" }}>
-        chevron_right
-      </span>
-    </IconButton>
+      <IconButton onClick={handleNextDay} size="small">
+        <span className="material-symbols-rounded" style={{ color: "#757575" }}>
+          chevron_right
+        </span>
+      </IconButton>
     </Box>
   );
 };

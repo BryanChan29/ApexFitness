@@ -3,6 +3,7 @@ import { Box, Toolbar, CircularProgress } from '@mui/material';
 import Sidebar from './components/Sidebar';
 import ProgressDashboard from './progresspage/Dashboard';
 import LogFood from './pages/LogFood';
+import NewMeal from './Meals/NewMeal'
 import LandingPage from './LandingPage/LandingPage';
 import { useAuth } from './LandingPage/authUtils';
 import WorkoutPage from './workouts/Workout';
@@ -54,6 +55,7 @@ function App() {
               <Route path="/goals" element={<Goals/>} />
               <Route path="/new-meal-plan" element={<NewMealPlan />} />
               <Route path="/add-food" element={<LogFood />} />
+              <Route path="/new-meal" element={<NewMeal />} />
 
               {/* Redirect to Dashboard if user is logged in */}
               <Route path="*" element={<Navigate to="/dashboard" />} />

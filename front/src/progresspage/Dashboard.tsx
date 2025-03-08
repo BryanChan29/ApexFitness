@@ -6,6 +6,7 @@ import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement
 import CustomDatePicker from '../components/DatePicker';
 import NutritionTable from '../components/NutritionTable';
 import axios from 'axios';
+import { format } from "date-fns";
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, ChartTitle, Tooltip, Legend);
 
@@ -14,7 +15,7 @@ interface ProgressEntry {
   weight: number;
 }
 
-interface DailyFoodItem {
+export interface DailyFoodItem {
   id: number;
   name: string;
   meal_type: string;
@@ -31,16 +32,43 @@ interface DailyFoodItem {
 const ProgressDashboard: React.FC = () => {
   const [progressData, setProgressData] = useState<ProgressEntry[]>([]);
   const [breakfastData, setBreakfastData] = useState<DailyFoodItem[]>([]);
+  const [lunchData, setLunchData] = useState<DailyFoodItem[]>([]);
+  const [dinnerData, setDinnerData] = useState<DailyFoodItem[]>([]);
+  const [snackData, setSnackData] = useState<DailyFoodItem[]>([]);
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
 
   useEffect(() => {
-    axios.get('/api/daily_food')
-    .then(response => {
-      const foodItems = response.data.result.filter((item: DailyFoodItem) => item.meal_type === 'breakfast');
-      setBreakfastData(foodItems);
-    })
-    .catch(error => {
+    const fetchDailyFood = async () => {
+      try {
+      const formattedDate = format(selectedDate, "yyyy-MM-dd");
+
+      const fetchMealData = async (mealType: string) => {
+        const response = await axios.get('/api/daily_food', {
+        params: {
+          date: formattedDate,
+          meal_type: mealType,
+        },
+        });
+        return response.data.result;
+      };
+
+      const [breakfast, lunch, dinner, snack] = await Promise.all([
+        fetchMealData('breakfast'),
+        fetchMealData('lunch'),
+        fetchMealData('dinner'),
+        fetchMealData('snack'),
+      ]);
+
+      setBreakfastData(breakfast);
+      setLunchData(lunch);
+      setDinnerData(dinner);
+      setSnackData(snack);
+      } catch (error) {
       console.error('Error fetching daily food data:', error);
-    });
+      }
+    };
+
+    fetchDailyFood();
 
     const dummyData: ProgressEntry[] = [
       { date: 'May', weight: 225 },
@@ -54,7 +82,7 @@ const ProgressDashboard: React.FC = () => {
       { date: 'Jan', weight: 211.5 },
     ];
     setProgressData(dummyData);
-  }, []);
+  }, [selectedDate]);
 
   const chartData = {
     labels: progressData.map((entry) => entry.date),
@@ -74,7 +102,7 @@ const ProgressDashboard: React.FC = () => {
     <Container maxWidth="lg" sx={{ mb: 4 }}>
       <Box display="flex" flexDirection="column" alignItems="center">
         <Box sx={{ mb: 2 }}>
-          <CustomDatePicker />
+        <CustomDatePicker selectedDate={selectedDate} setSelectedDate={setSelectedDate} />
         </Box>
 
         <Box display="flex" justifyContent="center" sx={{ mb: 4 }}>
@@ -126,32 +154,32 @@ const ProgressDashboard: React.FC = () => {
             <Typography variant="h3" sx={{ fontWeight: 'bold' }}>
               Lunch
             </Typography>
-            <Link to="/add-food?mealType=breakfast">
+            <Link to="/add-food?mealType=lunch">
               <Button variant="contained" className='primary-button'>Add Lunch</Button>
             </Link>
           </Box>
-          <NutritionTable foodData={[]} />
+          <NutritionTable foodData={lunchData} />
 
           <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%', mb: 2 }}>
             <Typography variant="h3" sx={{ fontWeight: 'bold' }}>
               Dinner
             </Typography>
-            <Link to="/add-food?mealType=breakfast">
+            <Link to="/add-food?mealType=dinner">
               <Button variant="contained" className='primary-button'>Add Dinner</Button>
             </Link>
           </Box>
-          <NutritionTable foodData={[]} />
+          <NutritionTable foodData={dinnerData} />
 
           <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%', mb: 2 }}>
             <Typography variant="h3" sx={{ fontWeight: 'bold' }}>
               Snacks
             </Typography>
-            <Link to="/add-food?mealType=breakfast">
+            <Link to="/add-food?mealType=snack">
               <Button variant="contained" className='primary-button'>Add Snack</Button>
             </Link>
           </Box>
           
-          <NutritionTable foodData={[]} />
+          <NutritionTable foodData={snackData} />
 
           <Typography variant="h3" sx={{ mb: 2, fontWeight: 'bold' }}>
             Total

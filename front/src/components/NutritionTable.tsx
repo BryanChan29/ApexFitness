@@ -52,12 +52,12 @@ const NutritionTable: React.FC<NutritionTableProps> = ({ foodData }) => {
               <TableRow key={item.id}>
                 <TableCell>{item.name}</TableCell>
                 <TableCell align="right">{item.quantity}</TableCell>
-                <TableCell align="right">{item.calories}</TableCell>
-                <TableCell align="right">{item.carbs}</TableCell>
-                <TableCell align="right">{item.fat}</TableCell>
-                <TableCell align="right">{item.protein}</TableCell>
-                <TableCell align="right">{item.sodium}</TableCell>
-                <TableCell align="right">{item.sugar}</TableCell>
+                <TableCell align="right">{item.calories} cal</TableCell>
+                <TableCell align="right">{item.carbs}g</TableCell>
+                <TableCell align="right">{item.fat}g</TableCell>
+                <TableCell align="right">{item.protein}g</TableCell>
+                <TableCell align="right">{item.sodium}mg</TableCell>
+                <TableCell align="right">{item.sugar}g</TableCell>
               </TableRow>
             ))}
           </TableBody>

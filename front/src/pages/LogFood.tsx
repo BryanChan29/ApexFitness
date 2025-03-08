@@ -16,28 +16,28 @@ const FoodItemSchema = z.object({
 });
 
 const NutrientSchema = z.object({
-  calcium: z.coerce.number().optional(),
+  calcium: z.coerce.number().optional().default(0),
   calories: z.coerce.number(),
-  carbohydrate: z.coerce.number(),
-  cholesterol: z.coerce.number(),
-  fat: z.coerce.number(),
-  fiber: z.coerce.number().optional(),
-  iron: z.coerce.number().optional(),
-  monounsaturated_fat: z.coerce.number().optional(),
-  polyunsaturated_fat: z.coerce.number().optional(),
-  potassium: z.coerce.number().optional(),
-  protein: z.coerce.number(),
-  saturated_fat: z.coerce.number(),
-  sodium: z.coerce.number(),
-  sugar: z.coerce.number(),
-  vitamin_a: z.coerce.number().optional(),
-  vitamin_c: z.coerce.number().optional(),
-  measurement_description: z.string(),
-  metric_serving_amount: z.coerce.number(),
-  metric_serving_unit: z.string(),
-  serving_description: z.string(),
-  serving_id: z.string(),
-  serving_url: z.string().url(),
+  carbohydrate: z.coerce.number().optional().default(0),
+  cholesterol: z.coerce.number().optional().default(0),
+  fat: z.coerce.number().optional().default(0),
+  fiber: z.coerce.number().optional().default(0),
+  iron: z.coerce.number().optional().default(0),
+  monounsaturated_fat: z.coerce.number().optional().default(0),
+  polyunsaturated_fat: z.coerce.number().optional().default(0),
+  potassium: z.coerce.number().optional().default(0),
+  protein: z.coerce.number().optional().default(0),
+  saturated_fat: z.coerce.number().optional().default(0),
+  sodium: z.coerce.number().optional().default(0),
+  sugar: z.coerce.number().optional().default(0),
+  vitamin_a: z.coerce.number().optional().default(0),
+  vitamin_c: z.coerce.number().optional().default(0),
+  measurement_description: z.string().optional().default(""),
+  metric_serving_amount: z.coerce.number().optional().default(0),
+  metric_serving_unit: z.string().optional().default(""),
+  serving_description: z.string().optional().default(""),
+  serving_id: z.string().optional().default(""),
+  serving_url: z.string().url().optional().default(""),
 });
 
 const FoodDetailSchema = z.object({
@@ -64,7 +64,7 @@ type SearchResults = z.infer<typeof SearchResultsSchema>;
 type FoodItem = z.infer<typeof FoodItemSchema>;
 type FoodDetail = z.infer<typeof FoodDetailSchema>;
 
-const LogFood = () => {
+const LogFood = ({ onAddMealItem }: { onAddMealItem?: (foodItem: any) => void }) => {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchResults>({});
   const [showSearchButton, setShowSearchButton] = useState(false);
@@ -81,7 +81,7 @@ const LogFood = () => {
   const mealType = searchParams.get('mealType');
 
   useEffect(() => {
-    if (!mealType || !["breakfast", "lunch", "dinner", "snack"].includes(mealType)) {
+    if (!mealType || !["breakfast", "lunch", "dinner", "snack", "new-meal"].includes(mealType)) {
       navigate('/not-found');
     }
   }, [mealType, navigate]); 
@@ -103,8 +103,6 @@ const LogFood = () => {
         const response = await axios.get(`/api/search-food`, {
           params: { query },
         });
-  
-        console.log("Raw Response:", response.data);
   
         if (!response.data.foods?.food) {
           console.error("No food items found in the response.");
@@ -136,6 +134,8 @@ const LogFood = () => {
       const response = await axios.get(`/api/food-detail`, {
         params: { foodId: food.food_id },
       });
+
+      console.log("Food detail response:", response.data);
   
       const parsedDetail = FoodDetailSchema.parse(response.data);
       setFoodDetail(parsedDetail);
@@ -208,8 +208,27 @@ const LogFood = () => {
     }
   };
 
+  const handleAddMealItem = () => {
+    if (!fullNutrition || !selectedFood) return;
+
+    const newMealItem = {
+      name: selectedFood.food_name,
+      calories: fullNutrition.calories,
+      carbs: fullNutrition.carbohydrate,
+      fat: fullNutrition.fat,
+      protein: fullNutrition.protein,
+      sodium: fullNutrition.sodium,
+      sugar: fullNutrition.sugar,
+      quantity: `${numServings} x ${fullNutrition.serving_description}`,
+    };
+
+    if (onAddMealItem) {
+      onAddMealItem(newMealItem);
+    }  
+  };
+
   useEffect(() => {
-    if (!foodDetail || !fullNutrition) return;
+    if (!foodDetail) return;
   
     const servings = foodDetail.food.servings.serving;
     const selectedServing = Array.isArray(servings)
@@ -250,7 +269,7 @@ const LogFood = () => {
       }}
     >
       <Typography variant="h4" component="h1" sx={{ marginBottom: "20px" }}>
-        {mealType ? `Add Food for ${mealType.charAt(0).toUpperCase() + mealType.slice(1)}` : "Add Food"}
+        {mealType === "new-meal" ? "Create a new meal" : mealType ? `Add Food for ${mealType.charAt(0).toUpperCase() + mealType.slice(1)}` : "Add Food"}
       </Typography>
 
       <TextField
@@ -418,13 +437,23 @@ const LogFood = () => {
                       Full Nutrition
                     </Button>
 
-                    <Button
+                    {mealType === "new-meal" ? (
+                      <Button
+                      variant="contained"
+                      onClick={handleAddMealItem}
+                      className="primary-button"
+                      >
+                      Add to meal
+                      </Button>
+                    ) : (
+                      <Button
                       variant="contained"
                       onClick={handleAddFood}
                       className="primary-button"
-                    >
+                      >
                       Add Food
-                    </Button>
+                      </Button>
+                    )}
                   </Box>
                   <PopupNutrition
                     open={openDialog}
@@ -442,10 +471,17 @@ const LogFood = () => {
         </Box>
       )}
 
-      <Box sx={{mb: 4, mt: 4, width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'flex-start'}}>
-          <Typography variant="h3" sx={{ mb: 2, fontWeight: 'bold' }}>Saved Meals</Typography>
+      {mealType !== "new-meal" && (
+        <Box sx={{ mb: 4, mt: 4, width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
+        <Typography variant="h3" sx={{ mb: 2, fontWeight: 'bold' }}>Saved Meals</Typography>
+        <Button variant="contained" sx={{ mb: 2 }} className='primary-button'>
+          Add a New Meal
+        </Button>
+          </Box>
           <NutritionTable foodData={[]} />
-      </Box>
+        </Box>
+      )}
     </Box>
   );
 };
