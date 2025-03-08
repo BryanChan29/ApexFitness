@@ -478,7 +478,7 @@ requestRouter.get('/meal_plan/:id', async (req, res) => {
     result = await db.all(query, [mealPlanId]);
 
     if (!result || result.length === 0) {
-      return res.status(404).json({ error: 'Meal plan not found' });
+      return res.json({ name: '', result: undefined });
     }
 
     const formattedMealPlan: Partial<UIFormattedMealPlan> = {};
@@ -537,7 +537,7 @@ requestRouter.get('/user/meal_plan', async (req, res) => {
     const result = await db.all(query, [userId]);
 
     if (!result || result.length === 0) {
-      return res.status(404).json({ error: 'No meal plans found' });
+      return res.json({ meal_plan_ids: [] });
     }
     console.log('result', result);
 
