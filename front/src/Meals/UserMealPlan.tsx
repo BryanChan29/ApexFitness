@@ -31,8 +31,6 @@ function UserMealPlans() {
       .catch((err) => {
         console.error('Error posting meal plan', err);
       });
-    // TODO: Discuss with team. How does a meal plan get populated?
-    // TODO: Bottom line; add a user id to a meal plan
   };
 
   useEffect(() => {
