@@ -668,27 +668,24 @@ app.get('/api/user', async (req: Request, res: Response) => {
 
 // PATCH endpoint for updating body metrics
 app.patch('/api/user/metrics', async (req: Request, res: Response) => {
-  // Retrieve token from cookies (make sure cookie-parser middleware is enabled)
+  // Retrieve token from cookies (using token-based authentication)
   const { token } = req.cookies;
   if (!token || !tokenStorage[token]) {
     return res.status(401).json({ error: 'Not authenticated' });
   }
 
-  // Retrieve the user's email from the token storage
+  // Retrieve the user's email from tokenStorage
   const userEmail = tokenStorage[token];
 
   try {
     // Get the existing user record by email
-    const existingUser = await db.get('SELECT * FROM users WHERE email = ?', [
-      userEmail,
-    ]);
+    const existingUser = await db.get('SELECT * FROM users WHERE email = ?', [userEmail]);
     if (!existingUser) {
       return res.status(404).json({ error: 'User not found' });
     }
 
     // Extract only the body metrics from the request body
-    const { current_weight, goal_weight, height, age, activity_level } =
-      req.body;
+    const { current_weight, goal_weight, height, age, activity_level } = req.body;
 
     // Update the user record with new metrics, preserving fields that are not provided
     await db.run(
@@ -708,16 +705,49 @@ app.patch('/api/user/metrics', async (req: Request, res: Response) => {
       userEmail
     );
 
-    // Retrieve the updated user record and return it
-    const updatedUser = await db.get('SELECT * FROM users WHERE email = ?', [
-      userEmail,
-    ]);
+    // If a new current weight is provided, log it in the history table (limit to one entry per day)
+    if (current_weight !== undefined && current_weight !== null) {
+      // Get today's date in YYYY-MM-DD format
+      const today = new Date().toISOString().split('T')[0];
+
+      // Check if there's already an entry for today for this user
+      const existingEntry = await db.get(
+        `SELECT * FROM user_weight_history 
+         WHERE user_id = ? AND date(date_recorded) = ?`,
+        [existingUser.id, today]
+      );
+
+      if (existingEntry) {
+        // Update the existing entry's weight
+        await db.run(
+          `UPDATE user_weight_history 
+           SET weight = ? 
+           WHERE id = ?`,
+          current_weight,
+          existingEntry.id
+        );
+      } else {
+        // Insert a new entry if none exists for today
+        const date_recorded = new Date().toISOString();
+        await db.run(
+          `INSERT INTO user_weight_history (user_id, date_recorded, weight)
+           VALUES (?, ?, ?)`,
+          existingUser.id,
+          date_recorded,
+          current_weight
+        );
+      }
+    }
+
+    // Retrieve and return the updated user record
+    const updatedUser = await db.get('SELECT * FROM users WHERE email = ?', [userEmail]);
     return res.status(200).json(updatedUser);
   } catch (error) {
     console.error('Error updating metrics:', error);
     return res.status(500).json({ error: 'Internal Server Error' });
   }
 });
+
 
 // Workouts Endpoints
 app.post('/api/workouts', async (req, res) => {

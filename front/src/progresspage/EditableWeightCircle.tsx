@@ -24,12 +24,17 @@ const EditableWeightCircle: React.FC<EditableWeightCircleProps> = ({
   const handleClick = () => setIsEditing(true);
   const handleBlur = () => {
     setIsEditing(false);
-    const parsedValue = localValue === '' ? null : parseInt(localValue, 10);
+    const parsedValue = localValue === '' ? null : parseFloat(localValue);
     onChange(parsedValue);
   };
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       e.currentTarget.blur();
+    }
+
+    if (e.key === '-') {
+      e.preventDefault();
+      return;
     }
   };
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -58,20 +63,25 @@ const EditableWeightCircle: React.FC<EditableWeightCircleProps> = ({
       {isEditing ? (
         <TextField
           variant="standard"
+          type="number"
+          inputMode="numeric"
           autoFocus
           value={localValue}
           onChange={handleInputChange}
           onBlur={handleBlur}
           onKeyDown={handleKeyDown}
-          inputProps={{
-            style: {
-              textAlign: 'center',
-              color: 'white',
-              fontWeight: 'bold',
-              fontSize: '2rem',
-              width: '100%',
+          slotProps={{
+            input: {
+              inputProps: {
+                min: 1, // Moved 'min' into inputProps
+              },
+              style: { textAlign: 'center', color: 'white',
+                fontWeight: 'bold',
+                fontSize: '2rem',
+                width: '100%'},
             },
           }}
+          
         />
       ) : (
         <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1 }}>
