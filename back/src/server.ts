@@ -21,14 +21,11 @@ const __curr_dirname = path.dirname(__filename);
 
 dotenv.config({ path: path.resolve(__curr_dirname, '../../.env') });
 
-if (
-  !process.env.FATSECRET_CLIENT_SECRET || !process.env.FATSECRET_CLIENT_ID
-) {
+if (!process.env.FATSECRET_CLIENT_SECRET || !process.env.FATSECRET_CLIENT_ID) {
   throw new Error(
     'FATSECRET_CLIENT_ID and/or FATSECRET_CLIENT_SECRET is not defined in .env file'
   );
 }
-
 const BURN_API_URL = 'https://api.api-ninjas.com/v1/caloriesburned';
 const BURN_API_KEY = '';
 
@@ -60,6 +57,7 @@ const cookieOptions: CookieOptions = {
 };
 
 app.use(cookieParser());
+
 async function getUserIdFromCookies(
   token: string | undefined
 ): Promise<number | null> {
@@ -93,6 +91,7 @@ async function getUserIdFromCookies(
   }
 }
 
+// Auth
 const FATSECRET_API_URL = 'https://platform.fatsecret.com/rest/server.api';
 const FATSECRET_TOKEN_URL = 'https://oauth.fatsecret.com/connect/token';
 let fatSecretAccessToken: string | null = null;
@@ -341,6 +340,7 @@ app.get('/api/auth/check', (req, res) => {
 });
 
 app.post('/api/meal_plan', async (req, res) => {
+  console.log('body:' + JSON.stringify(req.body));
   const { name, isPrivate } = req.body;
   const validateRequest = () => {
     if (!req.body || Object.keys(req.body).length === 0)
@@ -440,9 +440,8 @@ requestRouter.get('/daily_food', async (req, res) => {
 });
 
 requestRouter.get('/meal_plan/:id', async (req, res) => {
-  let result: { day_of_week: string; daily_foods: string }[];
+  let result: { day_of_week: string; daily_foods: string; name: string }[];
   const mealPlanId = parseInt(req.params.id, 10);
-
   if (isNaN(mealPlanId)) {
     return res.status(400).json({ error: 'Invalid Meal Plan ID' });
   }
@@ -450,6 +449,7 @@ requestRouter.get('/meal_plan/:id', async (req, res) => {
   const query = `
     SELECT 
         mpi.day_of_week,
+        mp.name,
         json_group_array(
             json_object(
                 'name', df.name,
@@ -479,6 +479,7 @@ requestRouter.get('/meal_plan/:id', async (req, res) => {
     }
 
     const formattedMealPlan: Partial<UIFormattedMealPlan> = {};
+    const mealPlanName = result[0].name;
 
     result.forEach((row) => {
       const dayOfWeek =
@@ -503,130 +504,45 @@ requestRouter.get('/meal_plan/:id', async (req, res) => {
       });
     });
 
-    return res.json({ result: formattedMealPlan });
+    return res.json({ name: mealPlanName, result: formattedMealPlan });
   } catch (err: any) {
     console.error(err);
     return res.status(500).json({ error: err.toString() });
   }
 });
 
-requestRouter.get('/meal_plans/:user_id', async (req, res) => {
-  // TODO: work on permissions, get USER ID
-  // TODO: make it work
+requestRouter.get('/user/meal_plan', async (req, res) => {
+  const userId = await getUserIdFromCookies(req.cookies.token);
 
-  let result;
-  const userId = req.params.user_id;
+  console.log(userId);
 
   if (!userId) {
     return res.status(400).json({ error: 'Invalid User ID' });
   }
 
   const query = `
-      SELECT 
-          mp.id AS meal_plan_id,
-          m.date AS meal_date,
-          json_group_array(
-              json_object(
-                  'name', df.name,
-                  'meal_type', df.meal_type,
-                  'calories', df.calories,
-                  'carbs', df.carbs,
-                  'fat', df.fat,
-                  'protein', df.protein,
-                  'sodium', df.sodium,
-                  'sugar', df.sugar
-              )
-          ) AS daily_foods
-      FROM meal_plans mp
-      LEFT JOIN meal_plan_items mpi ON mp.id = mpi.meal_plan_id
-      LEFT JOIN meals m ON mpi.meal_id = m.id
-      LEFT JOIN meal_items mi ON m.id = mi.meal_id
-      LEFT JOIN daily_food df ON mi.food_id = df.id
-      WHERE df.user_id = ? 
-      GROUP BY mp.id, m.date;
-    `;
+    SELECT DISTINCT mp.id AS meal_plan_id
+    FROM meal_plans mp
+    JOIN meal_plan_items mpi ON mp.id = mpi.meal_plan_id
+    JOIN meals m ON mpi.meal_id = m.id
+    JOIN meal_items mi ON m.id = mi.meal_id
+    JOIN daily_food df ON mi.food_id = df.id
+    WHERE df.user_id = ?;
+  `;
 
   try {
-    result = await db.all(query, [userId]);
+    const result = await db.all(query, [userId]);
 
     if (!result || result.length === 0) {
       return res.status(404).json({ error: 'No meal plans found' });
     }
-
-    const mealPlans: Record<number, UIFormattedMealPlan> = {};
-
-    result.forEach((row) => {
-      const mealPlanId = row.meal_plan_id;
-      const dateObj = new Date(row.meal_date);
-      const dayNames = [
-        'sunday',
-        'monday',
-        'tuesday',
-        'wednesday',
-        'thursday',
-        'friday',
-        'saturday',
-      ];
-      const dayOfWeek = dayNames[
-        dateObj.getUTCDay()
-      ] as keyof UIFormattedMealPlan;
-
-      if (!mealPlans[mealPlanId]) {
-        mealPlans[mealPlanId] = {
-          monday: { breakfast: [], lunch: [], dinner: [], snack: [] },
-          tuesday: { breakfast: [], lunch: [], dinner: [], snack: [] },
-          wednesday: { breakfast: [], lunch: [], dinner: [], snack: [] },
-          thursday: { breakfast: [], lunch: [], dinner: [], snack: [] },
-          friday: { breakfast: [], lunch: [], dinner: [], snack: [] },
-          saturday: { breakfast: [], lunch: [], dinner: [], snack: [] },
-          sunday: { breakfast: [], lunch: [], dinner: [], snack: [] },
-        };
-      }
-
-      if (!mealPlans[mealPlanId][dayOfWeek]) {
-        mealPlans[mealPlanId][dayOfWeek] = {
-          breakfast: [],
-          lunch: [],
-          dinner: [],
-          snack: [],
-        };
-      }
-
-      const dailyFoods: UIFormattedDailyFoodItem[] = row.daily_foods
-        ? JSON.parse(row.daily_foods)
-        : [];
-
-      dailyFoods.forEach((food) => {
-        const mealType = food.meal_type.toLowerCase() as keyof UIDailyMeal;
-        mealPlans[mealPlanId][dayOfWeek][mealType].push(food);
-      });
-    });
+    console.log('result', result);
 
     return res.json({
-      result: Object.entries(mealPlans).map(([id, data]) => ({
-        meal_plan_id: Number(id),
-        ...data,
-      })),
+      meal_plan_ids: result.map((row) => row.meal_plan_id),
     });
   } catch (err: any) {
     console.error(err);
-    return res.status(500).json({ error: err.toString() });
-  }
-});
-
-requestRouter.get('/meal_plans', async (req, res) => {
-  let result;
-  try {
-    result = await db.all('SELECT * FROM meal_plans WHERE is_private = 0;');
-
-    if (!result || result.length === 0) {
-      console.log('public meal plans found.');
-      return res.status(404).json({ error: 'No public meal plans found' });
-    }
-
-    return res.json({ result });
-  } catch (err: any) {
-    console.error('Error in /meal_plans:', err);
     return res.status(500).json({ error: err.toString() });
   }
 });
@@ -691,6 +607,23 @@ app.get(
     }
   }
 );
+
+requestRouter.get('/meal_plans', async (req, res) => {
+  let result;
+  try {
+    result = await db.all('SELECT * FROM meal_plans WHERE is_private = 0;');
+
+    if (!result || result.length === 0) {
+      console.log('public meal plans found.');
+      return res.status(404).json({ error: 'No public meal plans found' });
+    }
+
+    return res.json({ result });
+  } catch (err: any) {
+    console.error('Error in /meal_plans:', err);
+    return res.status(500).json({ error: err.toString() });
+  }
+});
 
 app.get(
   '/api/food-detail',
