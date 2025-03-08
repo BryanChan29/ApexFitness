@@ -22,11 +22,10 @@ const __curr_dirname = path.dirname(__filename);
 dotenv.config({ path: path.resolve(__curr_dirname, '../../.env') });
 
 if (
-  !process.env.FATSECRET_CONSUMER_KEY ||
-  !process.env.FATSECRET_CLIENT_SECRET
+  !process.env.FATSECRET_CLIENT_SECRET || !process.env.FATSECRET_CLIENT_ID
 ) {
   throw new Error(
-    'FATSECRET_CONSUMER_KEY and/or FATSECRET_CLIENT_SECRET is not defined in .env file'
+    'FATSECRET_CLIENT_ID and/or FATSECRET_CLIENT_SECRET is not defined in .env file'
   );
 }
 const BURN_API_URL = 'https://api.api-ninjas.com/v1/caloriesburned';
