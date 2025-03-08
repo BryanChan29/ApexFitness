@@ -61,6 +61,38 @@ const cookieOptions: CookieOptions = {
 };
 
 app.use(cookieParser());
+async function getUserIdFromCookies(
+  token: string | undefined
+): Promise<number | null> {
+  // ! NEED TO AWAIT WHEN CALLING THIS (returns a promise)
+  // * Used for meal_plan when a user wants to query all of their meal_plans
+  if (!token) {
+    console.log('No token provided');
+    return null;
+  }
+
+  // Look up the email from tokenStorage
+  const email = tokenStorage[token];
+  if (!email) {
+    console.log('Invalid or expired token');
+    return null;
+  }
+
+  // Query the users table for the user ID
+  try {
+    const user = await db.get('SELECT id FROM users WHERE email = ?', [email]);
+
+    if (user) {
+      return user.id;
+    } else {
+      console.log('User not found in the database');
+      return null;
+    }
+  } catch (error) {
+    console.error('Database query error:', error);
+    return null;
+  }
+}
 
 const FATSECRET_API_URL = 'https://platform.fatsecret.com/rest/server.api';
 const FATSECRET_TOKEN_URL = 'https://oauth.fatsecret.com/connect/token';
@@ -814,9 +846,9 @@ app.post('/api/workouts', async (req, res) => {
             exercise.weight
           );
         }
-  
-        const exerciseId = exerciseResult.lastID; 
-  
+
+        const exerciseId = exerciseResult.lastID;
+
         const workoutExerciseStatement = await db.prepare(
           'INSERT INTO workout_exercises (workout_id, exercise_id) VALUES (?, ?)'
         );
@@ -881,10 +913,7 @@ app.post('/api/workouts/:workoutId/exercises', async (req, res) => {
     const workoutExerciseStatement = await db.prepare(
       'INSERT INTO workout_exercises (workout_id, exercise_id) VALUES (?, ?)'
     );
-    await workoutExerciseStatement.run(
-      workoutId,
-      exerciseResult.lastID
-    );
+    await workoutExerciseStatement.run(workoutId, exerciseResult.lastID);
 
     return res.json({
       message: 'Exercise added to workout successfully',
@@ -934,7 +963,6 @@ app.get('/api/calories-burned', async (req: Request, res: Response) => {
     } else {
       res.status(response.status).json({ error: response.data });
     }
-
   } catch (error) {
     console.error('Error fetching calories burned data:', error);
     res.status(500).json({ error: 'Failed to fetch calories burned data' });
