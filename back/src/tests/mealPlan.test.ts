@@ -165,7 +165,7 @@ describe('Meal Plan API', () => {
       const caughtError = error as AxiosError;
       expect(caughtError.response?.status).toBe(400);
       expect(caughtError.response?.data).toEqual({
-        error: 'Invalid Meal Plan Id',
+        error: 'Invalid Meal Plan ID',
       });
     }
   });
