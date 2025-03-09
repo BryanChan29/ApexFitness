@@ -58,6 +58,12 @@ const AuthModal: React.FC<AuthModalProps> = ({ open, onClose, type }) => {
     setValidationErrors((prev) => ({ ...prev, [e.target.name]: '' }));
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleSubmit();
+    }
+  };
+
   const handleSubmit = async () => {
     setError(null);
     setValidationErrors({});
@@ -98,7 +104,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ open, onClose, type }) => {
 
   return (
     <Modal open={open} onClose={onClose}>
-      <Box sx={modalStyle}>
+      <Box sx={modalStyle} onKeyDown={handleKeyDown}>
         <Box display="flex" justifyContent="space-between">
           <Typography variant="h6">
             {type === 'register' ? 'Register' : 'Login'}
@@ -151,7 +157,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ open, onClose, type }) => {
         <Button
           fullWidth
           variant="contained"
-          color="primary"
+          className='primary-button'
           onClick={handleSubmit}
           sx={{ mt: 2 }}
         >

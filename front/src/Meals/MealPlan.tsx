@@ -127,6 +127,14 @@ function MealPlan({ mealPlan, mealPlanName, isMealPublic }: MealPlanProps) {
           )}
         </div>
       </TableContainer>
+      <Button
+        variant="contained"
+        color="primary"
+        style={{ marginTop: '20px'}}
+        className='primary-button'
+      >
+        Add New Meal Plan
+      </Button>
     </div>
   );
 }

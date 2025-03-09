@@ -36,6 +36,15 @@ interface PopupNutritionProps {
 }
 
 const PopupNutrition: React.FC<PopupNutritionProps> = ({ open, onClose, nutritionData }) => {
+  if (nutritionData) {
+    try {
+      NutrientSchema.parse(nutritionData);
+    } catch (e) {
+      console.error("Invalid nutrition data", e);
+      return null;
+    }
+  }
+
   return (
     <Dialog
       open={open}
