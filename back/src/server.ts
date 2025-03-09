@@ -21,9 +21,7 @@ const __curr_dirname = path.dirname(__filename);
 
 dotenv.config({ path: path.resolve(__curr_dirname, '../../.env') });
 
-if (
-  !process.env.FATSECRET_CLIENT_SECRET || !process.env.FATSECRET_CLIENT_ID
-) {
+if (!process.env.FATSECRET_CLIENT_SECRET || !process.env.FATSECRET_CLIENT_ID) {
   throw new Error(
     'FATSECRET_CLIENT_ID and/or FATSECRET_CLIENT_SECRET is not defined in .env file'
   );
@@ -610,6 +608,23 @@ app.get(
   }
 );
 
+requestRouter.get('/meal_plans', async (req, res) => {
+  let result;
+  try {
+    result = await db.all('SELECT * FROM meal_plans WHERE is_private = 0;');
+
+    if (!result || result.length === 0) {
+      console.log('public meal plans found.');
+      return res.status(404).json({ error: 'No public meal plans found' });
+    }
+
+    return res.json({ result });
+  } catch (err: any) {
+    console.error('Error in /meal_plans:', err);
+    return res.status(500).json({ error: err.toString() });
+  }
+});
+
 app.get(
   '/api/food-detail',
   authenticateFatSecret,
@@ -793,9 +808,9 @@ app.post('/api/workouts', async (req, res) => {
             exercise.weight
           );
         }
-  
-        const exerciseId = exerciseResult.lastID; 
-  
+
+        const exerciseId = exerciseResult.lastID;
+
         const workoutExerciseStatement = await db.prepare(
           'INSERT INTO workout_exercises (workout_id, exercise_id) VALUES (?, ?)'
         );
@@ -860,10 +875,7 @@ app.post('/api/workouts/:workoutId/exercises', async (req, res) => {
     const workoutExerciseStatement = await db.prepare(
       'INSERT INTO workout_exercises (workout_id, exercise_id) VALUES (?, ?)'
     );
-    await workoutExerciseStatement.run(
-      workoutId,
-      exerciseResult.lastID
-    );
+    await workoutExerciseStatement.run(workoutId, exerciseResult.lastID);
 
     return res.json({
       message: 'Exercise added to workout successfully',
@@ -913,7 +925,6 @@ app.get('/api/calories-burned', async (req: Request, res: Response) => {
     } else {
       res.status(response.status).json({ error: response.data });
     }
-
   } catch (error) {
     console.error('Error fetching calories burned data:', error);
     res.status(500).json({ error: 'Failed to fetch calories burned data' });

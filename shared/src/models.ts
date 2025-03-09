@@ -38,6 +38,11 @@ export interface UIFormattedMealPlan {
   sunday: UIDailyMeal;
 }
 
+export interface MealPlanInfo {
+  id: string;
+  name: string;
+  is_private: boolean;
+}
 // id VARCHAR(50) PRIMARY KEY,
 //     email VARCHAR(50) NOT NULL,
 //     username VARCHAR(50) NOT NULL,

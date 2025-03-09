@@ -19,6 +19,7 @@ import {
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import RestaurantMenuIcon from '@mui/icons-material/RestaurantMenu';
 import FitnessCenterIcon from '@mui/icons-material/FitnessCenter';
+import ExploreIcon from '@mui/icons-material/Explore';
 import Dashboard from './progresspage/Dashboard';
 import FoodDash from './pages/FoodDash';
 import LandingPage from './LandingPage/LandingPage';
@@ -32,6 +33,7 @@ import FlagIcon from '@mui/icons-material/Flag';
 import Goals from './progresspage/Goals';
 import UserMealPlans from './Meals/UserMealPlan';
 import NewMealPlan from './Meals/NewMealPlan';
+import MealPlanSearch from './Meals/MealPlanSearch';
 
 // Drawer width
 const drawerWidth = 125;
@@ -130,6 +132,22 @@ function App() {
               </ListItemButton>
               <ListItemButton
                 component={Link}
+                to="/meal-plans"
+                sx={{
+                  justifyContent: 'center',
+                  padding: 2,
+                  flexDirection: 'column',
+                }}
+              >
+                <ListItemIcon
+                  sx={{ display: 'flex', justifyContent: 'center' }}
+                >
+                  <ExploreIcon />
+                </ListItemIcon>
+                <ListItemText primary="Explore" />
+              </ListItemButton>
+              <ListItemButton
+                component={Link}
                 to="/workouts"
                 sx={{
                   justifyContent: 'center',
@@ -191,6 +209,7 @@ function App() {
               <Route path="/workouts" element={<WorkoutPage />} />
               <Route path="/goals" element={<Goals />} />
               <Route path="/new-meal-plan" element={<NewMealPlan />} />
+              <Route path="/meal-plans" element={<MealPlanSearch />} />
 
               {/* Redirect to Dashboard if user is logged in */}
               <Route path="*" element={<Navigate to="/dashboard" />} />

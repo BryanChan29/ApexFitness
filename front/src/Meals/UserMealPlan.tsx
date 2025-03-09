@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import axios from 'axios';
 import MealPlan from './MealPlan';
 import { UIFormattedMealPlan } from '@apex/shared';
@@ -90,6 +90,7 @@ function UserMealPlans() {
             key={mealPlan.id}
             mealPlan={mealPlan.data}
             mealPlanName={mealPlan.name}
+            isMealPublic={false}
           />
         ))
       )}
