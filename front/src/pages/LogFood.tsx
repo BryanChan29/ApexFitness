@@ -191,12 +191,12 @@ const LogFood = ({ onAddMealItem }: { onAddMealItem?: (foodItem: any) => void })
       const response = await axios.post('/api/daily_food', {
         meal_type: mealType,
         name: selectedFood?.food_name || "Unknown",
-        calories: fullNutrition.calories,
-        carbs: fullNutrition.carbohydrate,
-        fat: fullNutrition.fat,
-        protein: fullNutrition.protein,
-        sodium: fullNutrition.sodium,
-        sugar: fullNutrition.sugar,
+        calories: Math.round(fullNutrition.calories),
+        carbs: Math.round(fullNutrition.carbohydrate),
+        fat: Math.round(fullNutrition.fat),
+        protein: Math.round(fullNutrition.protein),
+        sodium: Math.round(fullNutrition.sodium),
+        sugar: Math.round(fullNutrition.sugar),
         date: new Date().toLocaleDateString('en-CA'),
         quantity: `${numServings} x ${fullNutrition.serving_description}`,
       });
