@@ -189,7 +189,6 @@ const LogFood = ({ onAddMealItem }: { onAddMealItem?: (foodItem: any) => void })
   
     try {
       const response = await axios.post('/api/daily_food', {
-        user_id: "a71e0ca8-a4c3-40aa-b719-dddd0225f207",
         meal_type: mealType,
         name: selectedFood?.food_name || "Unknown",
         calories: fullNutrition.calories,
@@ -198,11 +197,12 @@ const LogFood = ({ onAddMealItem }: { onAddMealItem?: (foodItem: any) => void })
         protein: fullNutrition.protein,
         sodium: fullNutrition.sodium,
         sugar: fullNutrition.sugar,
-        date: new Date().toISOString().split("T")[0],
+        date: new Date().toLocaleDateString('en-CA'),
         quantity: `${numServings} x ${fullNutrition.serving_description}`,
       });
   
       console.log("Food added successfully:", response.data);
+      navigate('/dashboard');
     } catch (error) {
       console.error("Error adding food:", error);
     }
