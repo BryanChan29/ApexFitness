@@ -1,4 +1,11 @@
-import { Drawer, List, ListItemButton, ListItemText, Toolbar, Box } from '@mui/material';
+import {
+  Drawer,
+  List,
+  ListItemButton,
+  ListItemText,
+  Toolbar,
+  Box,
+} from '@mui/material';
 import { Link, useLocation } from 'react-router-dom';
 import LogoutButton from './LogoutButton';
 
@@ -15,13 +22,13 @@ function Sidebar() {
     alignItems: 'center',
     justifyContent: 'center',
   };
-  
+
   const menuItems = [
-    { to: "/dashboard", icon: "donut_small", label: "Dashboard" },
-    { to: "/meals", icon: "stockpot", label: "Meal Plans" },
-    { to: "/workouts", icon: "exercise", label: "Workouts" },
-    { to: "/goals", icon: "flag", label: "My Goals" },
-    { to: "/explore", icon: "explore", label: "Explore" },
+    { to: '/dashboard', icon: 'donut_small', label: 'Dashboard' },
+    { to: '/meals', icon: 'stockpot', label: 'Meal Plans' },
+    { to: '/workouts', icon: 'exercise', label: 'Workouts' },
+    { to: '/goals', icon: 'flag', label: 'My Goals' },
+    { to: '/meal-plan', icon: 'explore', label: 'Explore' },
   ];
 
   return (
@@ -53,7 +60,7 @@ function Sidebar() {
 
       <List sx={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
         {menuItems.map(({ to, icon, label }) => (
-            <ListItemButton
+          <ListItemButton
             key={to}
             component={Link}
             to={to}
@@ -62,47 +69,47 @@ function Sidebar() {
               padding: 2,
               flexDirection: 'column',
               '&:hover': {
-              backgroundColor: 'transparent',
-              '& .icon-box': {
-                transform: 'scale(1.1)',
-                backgroundColor: '#d6efff',
-                borderRadius: '20px',
-              }
+                backgroundColor: 'transparent',
+                '& .icon-box': {
+                  transform: 'scale(1.1)',
+                  backgroundColor: '#d6efff',
+                  borderRadius: '20px',
+                },
               },
             }}
-            >
+          >
             <Box
               className="icon-box"
               sx={{
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center',
-              width: 60,
-              height: 40,
-              borderRadius: '20px',
-              backgroundColor: isActive(to) ? '#b9e1fc' : 'transparent',
-              transition: 'background-color 0.3s ease-in-out, transform 0.3s ease-in-out'
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                width: 60,
+                height: 40,
+                borderRadius: '20px',
+                backgroundColor: isActive(to) ? '#b9e1fc' : 'transparent',
+                transition:
+                  'background-color 0.3s ease-in-out, transform 0.3s ease-in-out',
               }}
             >
               <span className="material-symbols-rounded" style={iconStyle}>
-              {icon}
+                {icon}
               </span>
             </Box>
             <ListItemText
               primary={label}
               sx={{
-              textAlign: 'center',
-              marginTop: 1,
+                textAlign: 'center',
+                marginTop: 1,
               }}
             />
-            </ListItemButton>
+          </ListItemButton>
         ))}
 
         <Box sx={{ paddingBottom: 2 }}>
           <LogoutButton />
         </Box>
       </List>
-
     </Drawer>
   );
 }
