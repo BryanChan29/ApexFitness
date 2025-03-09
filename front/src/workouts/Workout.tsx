@@ -282,9 +282,9 @@ const searchResultsModal = (
               </Table>
             </TableContainer>
             <Box sx={{ mt: 2 }}>
-              <Button variant="contained" color="primary" onClick={handleOpenStrengthModal} className='primary-button'>Add Strength Workout</Button>
+              <Button variant="contained" color="primary" onClick={handleOpenStrengthModal} sx={{ ml: 2, mb: 2 }} className='primary-button'>Add Strength Workout</Button>
             </Box>
-            <Button variant="contained" color="secondary" onClick={handleSaveStrengthWorkout} sx={{ ml: 2 }}>
+            <Button variant="contained" color="secondary" onClick={handleSaveStrengthWorkout} sx={{ ml: 2 }} className='primary-button'>
               Save Strength Workout
             </Button>
           </Paper>
