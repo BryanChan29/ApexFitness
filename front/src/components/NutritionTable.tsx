@@ -37,14 +37,14 @@ const NutritionTable: React.FC<NutritionTableProps> = ({ foodData }) => {
         <Table>
           <TableHead>
             <TableRow>
-              <TableCell>Food</TableCell>
-              <TableCell align="right">Quantity</TableCell>
-              <TableCell align="right">Calories</TableCell>
-              <TableCell align="right">Carbs</TableCell>
-              <TableCell align="right">Fat</TableCell>
-              <TableCell align="right">Protein</TableCell>
-              <TableCell align="right">Sodium</TableCell>
-              <TableCell align="right">Sugar</TableCell>
+              <TableCell><Typography fontWeight="bold">Food</Typography></TableCell>
+              <TableCell align="right"><Typography fontWeight="bold">Quantity</Typography></TableCell>
+              <TableCell align="right"><Typography fontWeight="bold">Calories</Typography></TableCell>
+              <TableCell align="right"><Typography fontWeight="bold">Carbs</Typography></TableCell>
+              <TableCell align="right"><Typography fontWeight="bold">Fat</Typography></TableCell>
+              <TableCell align="right"><Typography fontWeight="bold">Protein</Typography></TableCell>
+              <TableCell align="right"><Typography fontWeight="bold">Sodium</Typography></TableCell>
+              <TableCell align="right"><Typography fontWeight="bold">Sugar</Typography></TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
