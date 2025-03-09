@@ -88,14 +88,22 @@ const MealPlanSearch = () => {
           <Typography variant="h5" gutterBottom>
             Explore Meal Plans
           </Typography>
-          <TextField
+            <TextField
             fullWidth
             label="Search Meal Plans"
             variant="outlined"
             margin="normal"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-          />
+            slotProps={{
+              input: {
+                style: {
+                  backgroundColor: 'white',
+                  borderRadius: '30px',
+                },
+              },
+            }}
+            />
           <Grid container spacing={2}>
             {filteredMealPlans.map((plan) => (
               <Grid item xs={12} sm={6} md={4} key={plan.id}>

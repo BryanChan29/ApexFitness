@@ -4,9 +4,9 @@ INSERT INTO users (id, email, username, password, current_weight, goal_weight, h
 ('user1', 'alice@example.com', 'alice123', '$argon2id$v=19$m=65536,t=3,p=4$iXgrKMu5e9OLt3hbMh568A$fx1QqmmsKO8O124zzHB3/9ayTdvjnGffpN7NDp3UEEY', null, null, null, null, null),
 ('user2', 'bob@example.com', 'bob456', '$argon2id$v=19$m=65536,t=3,p=4$iXgrKMu5e9OLt3hbMh568A$fx1QqmmsKO8O124zzHB3/9ayTdvjnGffpN7NDp3UEEY', null, null, null, null, null);
 
-INSERT INTO daily_food (id, user_id, meal_type, name, calories, carbs, fat, protein, sodium, sugar) VALUES
-(1, 'user1', 'dinner', 'Chicken Stir-fry with White rice (1 serving)', 507, 10, 14, 56, 1400, 3),
-(2, 'user1', 'lunch', 'Soup and sandwich meal', 567, 10, 14, 56, 1400, 3);
+INSERT INTO daily_food (id, user_id, meal_type, name, quantity, calories, carbs, fat, protein, sodium, sugar, date) VALUES
+(1, 'user1', 'dinner', 'Chicken Stir-fry with White rice', '1 serving', 507, 10, 14, 56, 1400, 3, '2025-03-08'),
+(2, 'user1', 'lunch', 'Soup and sandwich meal', '1 meal', 567, 10, 14, 56, 1400, 3, '2025-03-08');
 
 -- Meal one solely consists of the chicken stir fry dish
 INSERT INTO meals (id, date, saved_meal) VALUES(10, '02/18/2025', false);
@@ -40,26 +40,27 @@ INSERT INTO meal_plans (id, name, is_private) VALUES (17, 'Meal plan 17', 0);
 INSERT INTO meal_plans (id, name, is_private) VALUES (18, 'Meal plan 18', 1);
 INSERT INTO meal_plans (id, name, is_private) VALUES (19, 'Meal plan 19', 0);
 INSERT INTO meal_plans (id, name, is_private) VALUES (20, 'Meal plan 20', 1);
-INSERT INTO daily_food (id, user_id, meal_type, name, calories, carbs, fat, protein, sodium, sugar) VALUES (100, 'user1', 'dinner', 'Test Food 1', 100, 10, 5, 8, 200, 2);
-INSERT INTO daily_food (id, user_id, meal_type, name, calories, carbs, fat, protein, sodium, sugar) VALUES (101, 'user1', 'dinner', 'Test Food 2', 110, 12, 6, 9, 205, 3);
-INSERT INTO daily_food (id, user_id, meal_type, name, calories, carbs, fat, protein, sodium, sugar) VALUES (102, 'user1', 'dinner', 'Test Food 3', 120, 14, 7, 10, 210, 4);
-INSERT INTO daily_food (id, user_id, meal_type, name, calories, carbs, fat, protein, sodium, sugar) VALUES (103, 'user1', 'dinner', 'Test Food 4', 130, 16, 8, 11, 215, 5);
-INSERT INTO daily_food (id, user_id, meal_type, name, calories, carbs, fat, protein, sodium, sugar) VALUES (104, 'user1', 'dinner', 'Test Food 5', 140, 18, 9, 12, 220, 6);
-INSERT INTO daily_food (id, user_id, meal_type, name, calories, carbs, fat, protein, sodium, sugar) VALUES (105, 'user1', 'dinner', 'Test Food 6', 150, 20, 10, 13, 225, 7);
-INSERT INTO daily_food (id, user_id, meal_type, name, calories, carbs, fat, protein, sodium, sugar) VALUES (106, 'user1', 'dinner', 'Test Food 7', 160, 22, 11, 14, 230, 8);
-INSERT INTO daily_food (id, user_id, meal_type, name, calories, carbs, fat, protein, sodium, sugar) VALUES (107, 'user1', 'dinner', 'Test Food 8', 170, 24, 12, 15, 235, 9);
-INSERT INTO daily_food (id, user_id, meal_type, name, calories, carbs, fat, protein, sodium, sugar) VALUES (108, 'user1', 'dinner', 'Test Food 9', 180, 26, 13, 16, 240, 10);
-INSERT INTO daily_food (id, user_id, meal_type, name, calories, carbs, fat, protein, sodium, sugar) VALUES (109, 'user1', 'dinner', 'Test Food 10', 190, 28, 14, 17, 245, 11);
-INSERT INTO daily_food (id, user_id, meal_type, name, calories, carbs, fat, protein, sodium, sugar) VALUES (110, 'user1', 'dinner', 'Test Food 11', 200, 30, 15, 18, 250, 12);
-INSERT INTO daily_food (id, user_id, meal_type, name, calories, carbs, fat, protein, sodium, sugar) VALUES (111, 'user1', 'dinner', 'Test Food 12', 210, 32, 16, 19, 255, 13);
-INSERT INTO daily_food (id, user_id, meal_type, name, calories, carbs, fat, protein, sodium, sugar) VALUES (112, 'user1', 'dinner', 'Test Food 13', 220, 34, 17, 20, 260, 14);
-INSERT INTO daily_food (id, user_id, meal_type, name, calories, carbs, fat, protein, sodium, sugar) VALUES (113, 'user1', 'dinner', 'Test Food 14', 230, 36, 18, 21, 265, 15);
-INSERT INTO daily_food (id, user_id, meal_type, name, calories, carbs, fat, protein, sodium, sugar) VALUES (114, 'user1', 'dinner', 'Test Food 15', 240, 38, 19, 22, 270, 16);
-INSERT INTO daily_food (id, user_id, meal_type, name, calories, carbs, fat, protein, sodium, sugar) VALUES (115, 'user1', 'dinner', 'Test Food 16', 250, 40, 20, 23, 275, 17);
-INSERT INTO daily_food (id, user_id, meal_type, name, calories, carbs, fat, protein, sodium, sugar) VALUES (116, 'user1', 'dinner', 'Test Food 17', 260, 42, 21, 24, 280, 18);
-INSERT INTO daily_food (id, user_id, meal_type, name, calories, carbs, fat, protein, sodium, sugar) VALUES (117, 'user1', 'dinner', 'Test Food 18', 270, 44, 22, 25, 285, 19);
-INSERT INTO daily_food (id, user_id, meal_type, name, calories, carbs, fat, protein, sodium, sugar) VALUES (118, 'user1', 'dinner', 'Test Food 19', 280, 46, 23, 26, 290, 20);
-INSERT INTO daily_food (id, user_id, meal_type, name, calories, carbs, fat, protein, sodium, sugar) VALUES (119, 'user1', 'dinner', 'Test Food 20', 290, 48, 24, 27, 295, 21);
+INSERT INTO daily_food (id, user_id, meal_type, name, quantity, calories, carbs, fat, protein, sodium, sugar, date) VALUES
+(100, 'user1', 'dinner', 'Test Food 1', '1 serving', 100, 10, 5, 8, 200, 2, '2025-03-07'),
+(101, 'user1', 'dinner', 'Test Food 2', '1 serving', 110, 12, 6, 9, 205, 3, '2025-03-07'),
+(102, 'user1', 'dinner', 'Test Food 3', '1 serving', 120, 14, 7, 10, 210, 4, '2025-03-07'),
+(103, 'user1', 'dinner', 'Test Food 4', '1 serving', 130, 16, 8, 11, 215, 5, '2025-03-07'),
+(104, 'user1', 'dinner', 'Test Food 5', '1 serving', 140, 18, 9, 12, 220, 6, '2025-03-07'),
+(105, 'user1', 'dinner', 'Test Food 6', '1 serving', 150, 20, 10, 13, 225, 7, '2025-03-07'),
+(106, 'user1', 'dinner', 'Test Food 7', '1 serving', 160, 22, 11, 14, 230, 8, '2025-03-07'),
+(107, 'user1', 'dinner', 'Test Food 8', '1 serving', 170, 24, 12, 15, 235, 9, '2025-03-07'),
+(108, 'user1', 'dinner', 'Test Food 9', '1 serving', 180, 26, 13, 16, 240, 10, '2025-03-07'),
+(109, 'user1', 'dinner', 'Test Food 10', '1 serving', 190, 28, 14, 17, 245, 11, '2025-03-07'),
+(110, 'user1', 'dinner', 'Test Food 11', '1 serving', 200, 30, 15, 18, 250, 12, '2025-03-07'),
+(111, 'user1', 'dinner', 'Test Food 12', '1 serving', 210, 32, 16, 19, 255, 13, '2025-03-07'),
+(112, 'user1', 'dinner', 'Test Food 13', '1 serving', 220, 34, 17, 20, 260, 14, '2025-03-07'),
+(113, 'user1', 'dinner', 'Test Food 14', '1 serving', 230, 36, 18, 21, 265, 15, '2025-03-07'),
+(114, 'user1', 'dinner', 'Test Food 15', '1 serving', 240, 38, 19, 22, 270, 16, '2025-03-07'),
+(115, 'user1', 'dinner', 'Test Food 16', '1 serving', 250, 40, 20, 23, 275, 17, '2025-03-07'),
+(116, 'user1', 'dinner', 'Test Food 17', '1 serving', 260, 42, 21, 24, 280, 18, '2025-03-07'),
+(117, 'user1', 'dinner', 'Test Food 18', '1 serving', 270, 44, 22, 25, 285, 19, '2025-03-07'),
+(118, 'user1', 'dinner', 'Test Food 19', '1 serving', 280, 46, 23, 26, 290, 20, '2025-03-07'),
+(119, 'user1', 'dinner', 'Test Food 20', '1 serving', 290, 48, 24, 27, 295, 21, '2025-03-07');
 INSERT INTO meals (id, date, saved_meal) VALUES(200, '03/07/2025', false);
 INSERT INTO meals (id, date, saved_meal) VALUES(201, '03/07/2025', false);
 INSERT INTO meals (id, date, saved_meal) VALUES(202, '03/07/2025', false);
