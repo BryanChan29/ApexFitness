@@ -723,7 +723,7 @@ app.patch('/api/user/metrics', async (req: Request, res: Response) => {
     // If a new current weight is provided, log it in the history table (limit to one entry per day)
     if (current_weight !== undefined && current_weight !== null) {
       // Get today's date in YYYY-MM-DD format
-      const today = new Date().toISOString().split('T')[0];
+      const today = new Date().toLocaleDateString('en-CA');
 
       // Check if there's already an entry for today for this user
       const existingEntry = await db.get(
@@ -961,7 +961,7 @@ app.post('/api/daily_food', async (req: Request, res: Response) => {
   const user_id = await getUserIdFromCookies(req.cookies.token);
   const { meal_type, name, quantity, calories, carbs, fat, protein, sodium, sugar, date } = req.body;
 
-  if (!user_id || !meal_type || !name || !calories || !carbs || !fat || !protein || !quantity) {
+  if (meal_type == null || name == null || calories == null || carbs == null || fat == null || protein == null || quantity == null) {
     return res.status(400).json({ error: 'All fields are required' });
   }
 
