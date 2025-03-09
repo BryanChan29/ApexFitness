@@ -10,6 +10,11 @@ import { useTheme } from '@mui/material/styles';
 import axios from 'axios';
 import EditableWeightCircle from './EditableWeightCircle';
 import EditableStatCard from './EditableStatCard';
+import {
+  calculateCalorieMetrics,
+  CalorieResults,
+} from '../utils/CalorieCalculations';
+
 
 interface WeightMetrics {
   current_weight: number | null;
@@ -17,6 +22,7 @@ interface WeightMetrics {
   height: number | null;
   age: number | null;
   activity_level: string | null;
+  gender: 'male' | 'female' | null; // Add this
 }
 
 const WeightMetricsUI: React.FC = () => {
@@ -28,7 +34,16 @@ const WeightMetricsUI: React.FC = () => {
     height: null,
     age: null,
     activity_level: null,
+    gender: null,
   });
+
+  const [calorieResults, setCalorieResults] = useState<CalorieResults>({
+    bmr: null,
+    tdee: null,
+    dailyIntake: null,
+    daysToGoal: null,
+  });
+
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>('');
 
@@ -43,6 +58,7 @@ const WeightMetricsUI: React.FC = () => {
           height: user.height,
           age: user.age,
           activity_level: user.activity_level,
+          gender: user.gender,
         });
       } catch (err) {
         console.error('Error fetching metrics:', err);
@@ -53,6 +69,30 @@ const WeightMetricsUI: React.FC = () => {
     }
     fetchMetrics();
   }, []);
+
+  useEffect(() => {
+    const { current_weight, goal_weight, height, age, activity_level, gender } = metrics;
+    if (
+      current_weight !== null &&
+      goal_weight !== null &&
+      height !== null &&
+      age !== null &&
+      activity_level !== null &&
+      gender !== null
+    ) {
+      const results = calculateCalorieMetrics(
+        current_weight,
+        goal_weight,
+        height,
+        age,
+        activity_level,
+        gender
+      );
+      setCalorieResults(results);
+    } else {
+      setCalorieResults({ bmr: null, tdee: null, dailyIntake: null, daysToGoal: null });
+    }
+  }, [metrics]);
 
   const handleCurrentWeightChange = (newWeight: number | null) => {
     setMetrics((prev) => ({ ...prev, current_weight: newWeight }));
@@ -69,12 +109,12 @@ const WeightMetricsUI: React.FC = () => {
 
   const handleSave = async () => {
     try {
-      const payload = {
-        current_weight: metrics.current_weight,
-        goal_weight: metrics.goal_weight,
-        height: metrics.height,
-        age: metrics.age,
-        activity_level: metrics.activity_level,
+      const payload = {...metrics
+        // current_weight: metrics.current_weight,
+        // goal_weight: metrics.goal_weight,
+        // height: metrics.height,
+        // age: metrics.age,
+        // activity_level: metrics.activity_level,
       };
       const response = await axios.patch('/api/user/metrics', payload, { withCredentials: true,});
       if (response.status === 200) {
@@ -160,7 +200,8 @@ const WeightMetricsUI: React.FC = () => {
             </Typography>
             <EditableWeightCircle
               weight={metrics.current_weight}
-              color={theme.palette.primary.main}
+              // color={theme.palette.primary.main}
+              color="#ff0000"
               onChange={handleCurrentWeightChange}
             />
           </Box>
@@ -175,7 +216,8 @@ const WeightMetricsUI: React.FC = () => {
             </Typography>
             <EditableWeightCircle
               weight={metrics.goal_weight}
-              color={theme.palette.secondary.main}
+              // color={theme.palette.secondary.main}
+              color="#0BDA51"
               onChange={handleGoalWeightChange}
             />
           </Box>
@@ -230,13 +272,34 @@ const WeightMetricsUI: React.FC = () => {
               }));
             }}
           />
+          <EditableStatCard
+            label="Gender"
+            value={metrics.gender || ''}
+            type="select"
+            selectOptions={['male', 'female']}
+            onChange={(val) => setMetrics((prev) => ({ ...prev, gender: typeof val === 'string' ? (val as 'male' | 'female') : null }))}
+          />
+        
         </Box>
 
         {/* Difference Text */}
         {weightDifference !== null && (
           <Typography variant="h3" sx={{ fontWeight: 'bold', mb: 3 }}>
-            {weightDifference} pounds to go!
+            {weightDifference.toFixed(1)} pounds to go!
           </Typography>
+        )}
+
+        {/* New Calorie Results */}
+        {calorieResults.dailyIntake !== null && (
+          <Box sx={{ mb: 3 }}>
+            <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+              Calorie Plan
+            </Typography>
+            <Typography>BMR: {calorieResults.bmr?.toFixed(0)} kcal</Typography>
+            <Typography>TDEE: {calorieResults.tdee?.toFixed(0)} kcal</Typography>
+            <Typography>Daily Intake: {calorieResults.dailyIntake.toFixed(0)} kcal (500 kcal deficit)</Typography>
+            <Typography>Days to Goal: {calorieResults.daysToGoal?.toFixed(0)}</Typography>
+          </Box>
         )}
 
         {/* Save Button */}

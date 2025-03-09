@@ -8,6 +8,7 @@ CREATE TABLE users (
     goal_weight INTEGER,
     height INTEGER,
     age INTEGER,
+    gender VARCHAR(10),
     activity_level VARCHAR(25)
 );
 

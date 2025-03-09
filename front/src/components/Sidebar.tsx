@@ -21,6 +21,7 @@ function Sidebar() {
     { to: "/meals", icon: "stockpot", label: "Meal Plans" },
     { to: "/workouts", icon: "exercise", label: "Workouts" },
     { to: "/goals", icon: "flag", label: "My Goals" },
+    { to: "/explore", icon: "explore", label: "Explore" },
   ];
 
   return (

@@ -1,5 +1,14 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { Box, Toolbar, CircularProgress } from '@mui/material';
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from 'react-router-dom';
+import {
+  Box,
+  Toolbar,
+  CircularProgress,
+} from '@mui/material';
 import Sidebar from './components/Sidebar';
 import ProgressDashboard from './progresspage/Dashboard';
 import LogFood from './pages/LogFood';
@@ -12,6 +21,7 @@ import Goals from './progresspage/Goals';
 import './App.css';
 import UserMealPlans from './Meals/UserMealPlan';
 import NewMealPlan from './Meals/NewMealPlan';
+import MealPlanSearch from './Meals/MealPlanSearch';
 
 
 function App() {
@@ -56,6 +66,7 @@ function App() {
               <Route path="/new-meal-plan" element={<NewMealPlan />} />
               <Route path="/add-food" element={<LogFood />} />
               <Route path="/new-meal" element={<NewMeal />} />
+              <Route path="/meal-plans" element={<MealPlanSearch />} />
 
               {/* Redirect to Dashboard if user is logged in */}
               <Route path="*" element={<Navigate to="/dashboard" />} />

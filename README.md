@@ -2,13 +2,12 @@
 ## CS478 Group Project
 
 ## SETUP API KEYS
-Replace the contents of the `.env` file in the root directory
+Creare a file called `.env` file in the root directory. Copy the contents of `.env_sample` into it and replace with your respective keys
 
 It will look like:
 ```
-FATSECRET_CONSUMER_KEY=abc-123
-FATSECRET_SHARED_SECRET=123-abc
-FATSECRET_CLIENT_SECRET=cba-321
+FATSECRET_CLIENT_ID=your-key-here
+FATSECRET_CLIENT_SECRET=your-key-here
 ```
 
 

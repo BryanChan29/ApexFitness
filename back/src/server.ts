@@ -21,12 +21,9 @@ const __curr_dirname = path.dirname(__filename);
 
 dotenv.config({ path: path.resolve(__curr_dirname, '../../.env') });
 
-if (
-  !process.env.FATSECRET_CONSUMER_KEY ||
-  !process.env.FATSECRET_CLIENT_SECRET
-) {
+if (!process.env.FATSECRET_CLIENT_SECRET || !process.env.FATSECRET_CLIENT_ID) {
   throw new Error(
-    'FATSECRET_CONSUMER_KEY and/or FATSECRET_CLIENT_SECRET is not defined in .env file'
+    'FATSECRET_CLIENT_ID and/or FATSECRET_CLIENT_SECRET is not defined in .env file'
   );
 }
 const BURN_API_URL = 'https://api.api-ninjas.com/v1/caloriesburned';
@@ -611,6 +608,23 @@ app.get(
   }
 );
 
+requestRouter.get('/meal_plans', async (req, res) => {
+  let result;
+  try {
+    result = await db.all('SELECT * FROM meal_plans WHERE is_private = 0;');
+
+    if (!result || result.length === 0) {
+      console.log('public meal plans found.');
+      return res.status(404).json({ error: 'No public meal plans found' });
+    }
+
+    return res.json({ result });
+  } catch (err: any) {
+    console.error('Error in /meal_plans:', err);
+    return res.status(500).json({ error: err.toString() });
+  }
+});
+
 app.get(
   '/api/food-detail',
   authenticateFatSecret,
@@ -669,27 +683,24 @@ app.get('/api/user', async (req: Request, res: Response) => {
 
 // PATCH endpoint for updating body metrics
 app.patch('/api/user/metrics', async (req: Request, res: Response) => {
-  // Retrieve token from cookies (make sure cookie-parser middleware is enabled)
+  // Retrieve token from cookies (using token-based authentication)
   const { token } = req.cookies;
   if (!token || !tokenStorage[token]) {
     return res.status(401).json({ error: 'Not authenticated' });
   }
 
-  // Retrieve the user's email from the token storage
+  // Retrieve the user's email from tokenStorage
   const userEmail = tokenStorage[token];
 
   try {
     // Get the existing user record by email
-    const existingUser = await db.get('SELECT * FROM users WHERE email = ?', [
-      userEmail,
-    ]);
+    const existingUser = await db.get('SELECT * FROM users WHERE email = ?', [userEmail]);
     if (!existingUser) {
       return res.status(404).json({ error: 'User not found' });
     }
 
     // Extract only the body metrics from the request body
-    const { current_weight, goal_weight, height, age, activity_level } =
-      req.body;
+    const { current_weight, goal_weight, height, age, activity_level } = req.body;
 
     // Update the user record with new metrics, preserving fields that are not provided
     await db.run(
@@ -709,10 +720,42 @@ app.patch('/api/user/metrics', async (req: Request, res: Response) => {
       userEmail
     );
 
-    // Retrieve the updated user record and return it
-    const updatedUser = await db.get('SELECT * FROM users WHERE email = ?', [
-      userEmail,
-    ]);
+    // If a new current weight is provided, log it in the history table (limit to one entry per day)
+    if (current_weight !== undefined && current_weight !== null) {
+      // Get today's date in YYYY-MM-DD format
+      const today = new Date().toISOString().split('T')[0];
+
+      // Check if there's already an entry for today for this user
+      const existingEntry = await db.get(
+        `SELECT * FROM user_weight_history 
+         WHERE user_id = ? AND date(date_recorded) = ?`,
+        [existingUser.id, today]
+      );
+
+      if (existingEntry) {
+        // Update the existing entry's weight
+        await db.run(
+          `UPDATE user_weight_history 
+           SET weight = ? 
+           WHERE id = ?`,
+          current_weight,
+          existingEntry.id
+        );
+      } else {
+        // Insert a new entry if none exists for today
+        const date_recorded = new Date().toISOString();
+        await db.run(
+          `INSERT INTO user_weight_history (user_id, date_recorded, weight)
+           VALUES (?, ?, ?)`,
+          existingUser.id,
+          date_recorded,
+          current_weight
+        );
+      }
+    }
+
+    // Retrieve and return the updated user record
+    const updatedUser = await db.get('SELECT * FROM users WHERE email = ?', [userEmail]);
     return res.status(200).json(updatedUser);
   } catch (error) {
     console.error('Error updating metrics:', error);
@@ -720,9 +763,151 @@ app.patch('/api/user/metrics', async (req: Request, res: Response) => {
   }
 });
 
+
+// Workouts Endpoints
+app.post('/api/workouts', async (req, res) => {
+  const { name, date, exercises } = req.body;
+  const userId = await getUserIdFromCookies(req.cookies.token);
+
+  if (!userId) {
+    return res.status(401).json({ error: 'Not authenticated' });
+  }
+
+  if (!name || !date) {
+    return res.status(400).json({ error: 'Name and date are required' });
+  }
+
+  try {
+    const workoutStatement = await db.prepare(
+      'INSERT INTO workouts (user_id, name, date) VALUES (?, ?, ?)'
+    );
+    const workoutResult = await workoutStatement.run(userId, name, date);
+    const workoutId = workoutResult.lastID;
+
+    if (exercises && Array.isArray(exercises)) {
+      for (const exercise of exercises) {
+        let exerciseStatement;
+        let exerciseResult;
+        if (exercise.hasOwnProperty('caloriesBurned')) {
+          exerciseStatement = await db.prepare(
+            'INSERT INTO exercises (name_of_workout, duration, calories_per_hour) VALUES (?, ?, ?)'
+          );
+          exerciseResult = await exerciseStatement.run(
+            exercise.workoutType,
+            exercise.duration,
+            exercise.caloriesBurned
+          );
+        } else {
+          exerciseStatement = await db.prepare(
+            'INSERT INTO exercises (name_of_workout, sets, reps, weight) VALUES (?, ?, ?, ?)'
+          );
+          exerciseResult = await exerciseStatement.run(
+            exercise.workoutType,
+            exercise.sets,
+            exercise.reps,
+            exercise.weight
+          );
+        }
+
+        const exerciseId = exerciseResult.lastID;
+
+        const workoutExerciseStatement = await db.prepare(
+          'INSERT INTO workout_exercises (workout_id, exercise_id) VALUES (?, ?)'
+        );
+        await workoutExerciseStatement.run(workoutId, exerciseId);
+      }
+    }
+
+    return res.json({
+      message: 'Workout created successfully',
+      workoutId: workoutId,
+    });
+  } catch (error) {
+    console.error('Error creating workout:', error);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.get('/api/workouts', async (req, res) => {
+  const userId = await getUserIdFromCookies(req.cookies.token);
+
+  if (!userId) {
+    return res.status(401).json({ error: 'Not authenticated' });
+  }
+
+  try {
+    const workouts = await db.all('SELECT * FROM workouts WHERE user_id = ?', [
+      userId,
+    ]);
+    return res.json({ workouts });
+  } catch (error) {
+    console.error('Error retrieving workouts:', error);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.post('/api/workouts/:workoutId/exercises', async (req, res) => {
+  const { name_of_workout, muscle_worked, duration, sets, reps, weight } =
+    req.body;
+  const workoutId = parseInt(req.params.workoutId, 10);
+
+  if (isNaN(workoutId)) {
+    return res.status(400).json({ error: 'Invalid workout ID' });
+  }
+
+  if (!name_of_workout) {
+    return res.status(400).json({ error: 'Exercise name is required' });
+  }
+
+  try {
+    const exerciseStatement = await db.prepare(
+      'INSERT INTO exercises (name_of_workout, muscle_worked, duration, sets, reps, weight) VALUES (?, ?, ?, ?, ?, ?)'
+    );
+    const exerciseResult = await exerciseStatement.run(
+      name_of_workout,
+      muscle_worked,
+      duration,
+      sets,
+      reps,
+      weight
+    );
+
+    const workoutExerciseStatement = await db.prepare(
+      'INSERT INTO workout_exercises (workout_id, exercise_id) VALUES (?, ?)'
+    );
+    await workoutExerciseStatement.run(workoutId, exerciseResult.lastID);
+
+    return res.json({
+      message: 'Exercise added to workout successfully',
+    });
+  } catch (error) {
+    console.error('Error adding exercise to workout:', error);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.get('/api/workouts/:workoutId/exercises', async (req, res) => {
+  const workoutId = parseInt(req.params.workoutId, 10);
+
+  if (isNaN(workoutId)) {
+    return res.status(400).json({ error: 'Invalid workout ID' });
+  }
+
+  try {
+    const exercises = await db.all(
+      `SELECT e.* FROM exercises e JOIN workout_exercises we ON e.id = we.exercise_id WHERE we.workout_id = ?`,
+      [workoutId]
+    );
+    return res.json({ exercises });
+  } catch (error) {
+    console.error('Error retrieving exercises:', error);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 app.get('/api/calories-burned', async (req: Request, res: Response) => {
   try {
-    console.log('Burn handler');
+    // console.log('Burn handler');
     const activity = req.query.activity as string;
     if (!activity) {
       return res.status(400).json({ error: 'Activity parameter is required' });
@@ -740,24 +925,6 @@ app.get('/api/calories-burned', async (req: Request, res: Response) => {
     } else {
       res.status(response.status).json({ error: response.data });
     }
-
-    // Simulate API response for testing
-    //   const simulatedResponse = {
-    //     data: [
-    //         {
-    //             name: activity,
-    //             calories_per_hour: 300, // Example value
-    //             duration_minutes: 60, // Example value
-    //             total_calories: 300, // Example value
-    //         },
-    //         // Add more simulated data if needed
-    //     ],
-    //     status: 200,
-    //     statusText: 'OK',
-    //     headers: {},
-    //     config: {},
-    // };
-    // res.json(simulatedResponse.data);
   } catch (error) {
     console.error('Error fetching calories burned data:', error);
     res.status(500).json({ error: 'Failed to fetch calories burned data' });

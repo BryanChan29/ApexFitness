@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
+  Box,
   Paper,
   Typography,
   TextField,
@@ -40,7 +41,7 @@ const EditableStatCard: React.FC<EditableStatCardProps> = ({
     setIsEditing(false);
     // Convert back to number if type=number
     if (type === 'number') {
-      const parsed = localValue === '' ? null : parseInt(localValue, 10);
+      const parsed = localValue === '' ? null : parseFloat(localValue);
       onChange(isNaN(parsed as number) ? null : parsed);
     } else {
       // type === 'select'
@@ -53,6 +54,11 @@ const EditableStatCard: React.FC<EditableStatCardProps> = ({
     if (type === 'number' && e.key === 'Enter') {
       e.currentTarget.blur();
     }
+    if (e.key === '-') {
+      e.preventDefault();
+      return;
+    }
+  
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -63,6 +69,10 @@ const EditableStatCard: React.FC<EditableStatCardProps> = ({
     setLocalValue(e.target.value);
   };
 
+  const isHeightField = label.toLowerCase().includes("height");
+
+
+
   return (
     <Paper
       elevation={2}
@@ -71,7 +81,12 @@ const EditableStatCard: React.FC<EditableStatCardProps> = ({
         p: 2,
         textAlign: 'center',
         borderRadius: 2,
+        backgroundColor: '#f5f5f5', // light gray background
         cursor: !isEditing ? 'pointer' : 'default',
+        transition: 'transform 0.3s ease', // smooth scaling
+        ':hover': {
+          transform: !isEditing ? 'scale(1.05)' : 'none',
+        },
       }}
       onClick={!isEditing ? handleClick : undefined}
     >
@@ -80,10 +95,26 @@ const EditableStatCard: React.FC<EditableStatCardProps> = ({
       </Typography>
 
       {!isEditing ? (
-        <Typography variant="h6" sx={{ fontWeight: 'medium' }}>
-          {value !== null && value !== '' ? value : 'Not Set'}
-        </Typography>
+      //   <Typography variant="h6" sx={{ fontWeight: 'medium' }}>
+      //     {value !== null && value !== '' ? value : 'Not Set'}
+      //   </Typography>
+      // ) : type === 'number' ? (
+
+        // Non-editing display: show value and optionally suffix (ft for height)
+        <Box sx={{ display: 'flex', alignItems: 'baseline', justifyContent: 'center', gap: 0.5 }}>
+          <Typography variant="h6" sx={{ fontWeight: 'medium' }}>
+            {value !== null && value !== '' ? value : 'Not Set'}
+          </Typography>
+          {isHeightField && value !== null && value !== '' && (
+            <Typography variant="body2" sx={{ fontWeight: 'normal' }}>
+              ft
+            </Typography>
+          )}
+        </Box>
       ) : type === 'number' ? (
+
+
+
         <TextField
           variant="standard"
           type="number"
@@ -92,8 +123,16 @@ const EditableStatCard: React.FC<EditableStatCardProps> = ({
           onBlur={handleBlur}
           onKeyDown={handleKeyDown}
           autoFocus
-          inputProps={{
-            style: { textAlign: 'center', fontWeight: 'bold' },
+          slotProps={{
+            input: {
+              inputProps: {
+                step: isHeightField ? 0.1 : 1, // Allow decimals for height
+                min: 1, // Moved 'min' into inputProps
+              },
+              style: { textAlign: 'center',
+                fontWeight: 'bold',
+              }
+            },
           }}
         />
       ) : (
