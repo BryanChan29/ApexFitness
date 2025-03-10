@@ -155,14 +155,14 @@ const LandingPage: React.FC = () => {
               px: 5,
               py: 2,
               mt: 4,
-              fontSize: '1.2rem',
+              fontSize: '1.4rem',
               backgroundColor: '#3f51b5',
               textTransform: 'none',
               '&:hover': { backgroundColor: '#303f9f' },
             }}
             onClick={() => handleOpenAuthModal('register')}
           >
-            Get Started
+            Get started
           </Button>
         </Box>
 

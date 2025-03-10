@@ -14,6 +14,8 @@ import {
   ListItem,
 } from '@mui/material';
 import { UIDailyMeal, UIFormattedMealPlan } from '@apex/shared';
+import LogFood from '../pages/LogFood';
+import { DailyFoodItem } from '../progresspage/Dashboard';
 
 const emptyMealPlan: UIFormattedMealPlan = {
   sunday: { breakfast: [], lunch: [], dinner: [], snack: [] },
@@ -28,6 +30,7 @@ const emptyMealPlan: UIFormattedMealPlan = {
 function NewMealPlan() {
   const [mealPlan, setMealPlan] = useState<UIFormattedMealPlan>(emptyMealPlan);
   const [isPublic, setIsPublic] = useState<boolean>(false);
+  const [foodItems, setFoodItems] = useState<DailyFoodItem[]>([]);
 
   const days = Object.keys(mealPlan) as Array<keyof UIFormattedMealPlan>;
   const mealTypes: Array<keyof UIDailyMeal> = [
@@ -65,11 +68,13 @@ function NewMealPlan() {
     }));
   }
 
+  const handleFoodAdd = (newFood: DailyFoodItem) => {
+    setFoodItems((prevItems) => [...prevItems, newFood]);
+  };
+
   return (
     <div style={{ padding: '20px' }}>
-      <Typography variant="h4" gutterBottom>
-        Create Meal Plan
-      </Typography>
+      <LogFood onAddMealItem={handleFoodAdd} />
       <TableContainer
         component={Paper}
         sx={{ borderRadius: '20px', overflow: 'hidden' }}
@@ -127,7 +132,7 @@ function NewMealPlan() {
 
       <Button
         variant="contained"
-        style={{ marginTop: '20px', borderRadius: '25px' }}
+        className='primary-button'
         onClick={addFood}
       >
         Add Food

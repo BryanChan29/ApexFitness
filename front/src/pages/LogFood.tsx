@@ -81,9 +81,11 @@ const LogFood = ({ onAddMealItem }: { onAddMealItem?: (foodItem: any) => void })
   const searchParams = new URLSearchParams(location.search);
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const mealType = searchParams.get('mealType');
+  const [dayOfWeek, setDayOfWeek] = useState("Monday");
+  const [mealPlanType, setMealPlanType] = useState("breakfast");
 
   useEffect(() => {
-    if (!mealType || !["breakfast", "lunch", "dinner", "snack", "new-meal"].includes(mealType)) {
+    if (!mealType || !["breakfast", "lunch", "dinner", "snack", "new-meal", "new-meal-plan"].includes(mealType)) {
       navigate('/not-found');
     }
   }, [mealType, navigate]);
@@ -269,7 +271,7 @@ const LogFood = ({ onAddMealItem }: { onAddMealItem?: (foodItem: any) => void })
       }}
     >
       <Typography variant="h4" component="h1" sx={{ marginBottom: "20px" }}>
-        {mealType === "new-meal" ? "Create a new meal" : mealType ? `Add Food for ${mealType.charAt(0).toUpperCase() + mealType.slice(1)}` : "Add Food"}
+        {mealType === "new-meal" ? "Create a new meal" : mealType === "new-meal-plan" ? "Create a new meal plan" : mealType ? `Add Food for ${mealType.charAt(0).toUpperCase() + mealType.slice(1)}` : "Add Food"}
       </Typography>
 
       <TextField
@@ -365,17 +367,17 @@ const LogFood = ({ onAddMealItem }: { onAddMealItem?: (foodItem: any) => void })
             ))}
             <Box sx={{ padding: "10px", textAlign: "center", marginTop: "10px" }}>
               <Button
-              variant="outlined"
-              color="primary"
-              onClick={() => setIsPopupOpen(true)}
-              sx={{
-                textTransform: "none",
-                fontWeight: "bold",
-                width: "100%",
-                borderRadius: "20px",
-              }}
+                variant="outlined"
+                color="primary"
+                onClick={() => setIsPopupOpen(true)}
+                sx={{
+                  textTransform: "none",
+                  fontWeight: "bold",
+                  width: "100%",
+                  borderRadius: "20px",
+                }}
               >
-              Don't see one that fits? Add a custom entry.
+                Don't see one that fits? Add a custom entry.
               </Button>
             </Box>
           </Box>
@@ -436,6 +438,41 @@ const LogFood = ({ onAddMealItem }: { onAddMealItem?: (foodItem: any) => void })
                     />
                   </Box>
 
+                  {mealType === "new-meal-plan" && (
+                    <Box sx={{ display: "flex", flexDirection: "column", gap: 2, alignItems: "flex-end" }}>
+                      <Box sx={{ display: "flex", justifyContent: "space-between", width: "100%" }}>
+                        <Typography sx={{ alignSelf: "center", fontWeight: "bold" }}>Day of the Week</Typography>
+                        <TextField
+                          select
+                          label="Day of the Week"
+                          value={dayOfWeek}
+                          onChange={(e) => setDayOfWeek(e.target.value)}
+                          SelectProps={{ native: true }}
+                          sx={{ width: "200px" }}
+                        >
+                          {["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"].map((day) => (
+                            <option key={day} value={day}>{day}</option>
+                          ))}
+                        </TextField>
+                      </Box>
+                      <Box sx={{ display: "flex", justifyContent: "space-between", width: "100%" }}>
+                        <Typography sx={{ alignSelf: "center", fontWeight: "bold" }}>Meal Type</Typography>
+                        <TextField
+                          select
+                          label="Meal Type"
+                          value={mealPlanType}
+                          onChange={(e) => setMealPlanType(e.target.value)}
+                          SelectProps={{ native: true }}
+                          sx={{ width: "200px" }}
+                        >
+                          {["Breakfast", "Lunch", "Dinner", "Snack"].map((type) => (
+                            <option key={type} value={type}>{type}</option>
+                          ))}
+                        </TextField>
+                      </Box>
+                    </Box>
+                  )}
+
                   {fullNutrition && (
                     <Box sx={{ marginTop: "20px" }}>
                       <Box sx={{ fontSize: "18px", fontWeight: "bold" }}>Nutritional Information</Box>
@@ -457,7 +494,7 @@ const LogFood = ({ onAddMealItem }: { onAddMealItem?: (foodItem: any) => void })
                       Full Nutrition
                     </Button>
 
-                    {mealType === "new-meal" ? (
+                    {mealType === "new-meal" || mealType === "new-meal-plan" ? (
                       <Button
                         variant="contained"
                         onClick={handleAddMealItem}
