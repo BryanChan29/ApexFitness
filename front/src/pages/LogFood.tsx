@@ -6,6 +6,7 @@ import { z } from "zod";
 import searchIcon from "../assets/search.png";
 import PopupNutrition from '../components/PopUpNutrition.tsx';
 import NutritionTable from "../components/NutritionTable.tsx";
+import ManualFoodEntryForm from "../components/ManualFoodEntry.tsx";
 
 const FoodItemSchema = z.object({
   food_name: z.string(),
@@ -78,13 +79,14 @@ const LogFood = ({ onAddMealItem }: { onAddMealItem?: (foodItem: any) => void })
   const location = useLocation();
   const navigate = useNavigate();
   const searchParams = new URLSearchParams(location.search);
+  const [isPopupOpen, setIsPopupOpen] = useState(false);
   const mealType = searchParams.get('mealType');
 
   useEffect(() => {
     if (!mealType || !["breakfast", "lunch", "dinner", "snack", "new-meal"].includes(mealType)) {
       navigate('/not-found');
     }
-  }, [mealType, navigate]); 
+  }, [mealType, navigate]);
 
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const value = event.target.value;
@@ -103,7 +105,7 @@ const LogFood = ({ onAddMealItem }: { onAddMealItem?: (foodItem: any) => void })
         const response = await axios.get(`/api/search-food`, {
           params: { query },
         });
-  
+
         if (!response.data.foods?.food) {
           console.error("No food items found in the response.");
           return;
@@ -112,7 +114,7 @@ const LogFood = ({ onAddMealItem }: { onAddMealItem?: (foodItem: any) => void })
         if (!Array.isArray(response.data.foods.food)) {
           response.data.foods.food = [response.data.foods.food];
         }
-  
+
         const parsedResults = SearchResultsSchema.parse(response.data);
         setResults(parsedResults);
       } catch (error) {
@@ -136,26 +138,24 @@ const LogFood = ({ onAddMealItem }: { onAddMealItem?: (foodItem: any) => void })
       });
 
       console.log("Food detail response:", response.data);
-  
+
       const parsedDetail = FoodDetailSchema.parse(response.data);
       setFoodDetail(parsedDetail);
-  
-      // Extract serving sizes
+
       const servings = parsedDetail.food.servings.serving;
       if (!servings) return;
-  
+
       const servingArray = Array.isArray(servings) ? servings : [servings];
-  
-      // Store all serving size descriptions
+
       const servingOptions = servingArray.map((serving) => serving.serving_description);
       setServingSizes(servingOptions);
-  
+
       setServingSize(servingOptions[0]);
       setFullNutrition(servingArray[0]);
     } catch (error) {
       console.error("Error fetching food detail:", error);
     }
-  };    
+  };
 
   const handleServingSizeChange = (event: React.ChangeEvent<{ value: unknown }>) => {
     const selectedSize = event.target.value as string;
@@ -166,11 +166,11 @@ const LogFood = ({ onAddMealItem }: { onAddMealItem?: (foodItem: any) => void })
       const selectedServing = Array.isArray(servings)
         ? servings.find((serving) => serving.serving_description === selectedSize)
         : servings.serving_description === selectedSize
-        ? servings
-        : null;
+          ? servings
+          : null;
 
       if (selectedServing) {
-        console.log("Selected Serving:", selectedServing); 
+        console.log("Selected Serving:", selectedServing);
         setFullNutrition(selectedServing);
       }
     }
@@ -186,7 +186,7 @@ const LogFood = ({ onAddMealItem }: { onAddMealItem?: (foodItem: any) => void })
       console.error("No nutrition data or meal type selected");
       return;
     }
-  
+
     try {
       const response = await axios.post('/api/daily_food', {
         meal_type: mealType,
@@ -200,7 +200,7 @@ const LogFood = ({ onAddMealItem }: { onAddMealItem?: (foodItem: any) => void })
         date: new Date().toLocaleDateString('en-CA'),
         quantity: `${numServings} x ${fullNutrition.serving_description}`,
       });
-  
+
       console.log("Food added successfully:", response.data);
       navigate('/dashboard');
     } catch (error) {
@@ -224,22 +224,22 @@ const LogFood = ({ onAddMealItem }: { onAddMealItem?: (foodItem: any) => void })
 
     if (onAddMealItem) {
       onAddMealItem(newMealItem);
-    }  
+    }
   };
 
   useEffect(() => {
     if (!foodDetail) return;
-  
+
     const servings = foodDetail.food.servings.serving;
     const selectedServing = Array.isArray(servings)
       ? servings.find((serving) => serving.serving_description === servingSize)
       : servings.serving_description === servingSize
-      ? servings
-      : null;
-  
+        ? servings
+        : null;
+
     if (selectedServing) {
       const multiplier = parseFloat(numServings) || 1;
-  
+
       const updatedNutrition = {
         ...selectedServing,
         calories: selectedServing.calories * multiplier,
@@ -255,7 +255,7 @@ const LogFood = ({ onAddMealItem }: { onAddMealItem?: (foodItem: any) => void })
         ...(selectedServing.vitamin_a !== undefined && { vitamin_a: selectedServing.vitamin_a * multiplier }),
         ...(selectedServing.vitamin_c !== undefined && { vitamin_c: selectedServing.vitamin_c * multiplier }),
       };
-  
+
       setFullNutrition(updatedNutrition);
     }
   }, [numServings, servingSize, foodDetail]);
@@ -351,19 +351,39 @@ const LogFood = ({ onAddMealItem }: { onAddMealItem?: (foodItem: any) => void })
                     backgroundColor: "#d9f0ff",
                   },
                   borderRadius: "15px",
-                }}        
+                }}
                 onClick={() => handleFoodClick(result)}
               >
-                  <Box>
-                    <Box>{result.food_name}</Box>
-                    <Box sx={{ color: "gray", fontSize: "12px" }}>
+                <Box>
+                  <Box>{result.food_name}</Box>
+                  <Box sx={{ color: "gray", fontSize: "12px" }}>
                     {result.brand_name && `${result.brand_name} - `}
                     {result.food_description}
-                    </Box>
                   </Box>
+                </Box>
               </Box>
             ))}
+            <Box sx={{ padding: "10px", textAlign: "center", marginTop: "10px" }}>
+              <Button
+              variant="outlined"
+              color="primary"
+              onClick={() => setIsPopupOpen(true)}
+              sx={{
+                textTransform: "none",
+                fontWeight: "bold",
+                width: "100%",
+                borderRadius: "20px",
+              }}
+              >
+              Don't see one that fits? Add a custom entry.
+              </Button>
+            </Box>
           </Box>
+          <ManualFoodEntryForm
+            isOpen={isPopupOpen}
+            onClose={() => setIsPopupOpen(false)}
+            mealType={mealType ?? ""}
+          />
 
           <Box
             sx={{
@@ -439,19 +459,19 @@ const LogFood = ({ onAddMealItem }: { onAddMealItem?: (foodItem: any) => void })
 
                     {mealType === "new-meal" ? (
                       <Button
-                      variant="contained"
-                      onClick={handleAddMealItem}
-                      className="primary-button"
+                        variant="contained"
+                        onClick={handleAddMealItem}
+                        className="primary-button"
                       >
-                      Add to meal
+                        Add to meal
                       </Button>
                     ) : (
                       <Button
-                      variant="contained"
-                      onClick={handleAddFood}
-                      className="primary-button"
+                        variant="contained"
+                        onClick={handleAddFood}
+                        className="primary-button"
                       >
-                      Add Food
+                        Add Food
                       </Button>
                     )}
                   </Box>
@@ -474,15 +494,15 @@ const LogFood = ({ onAddMealItem }: { onAddMealItem?: (foodItem: any) => void })
       {mealType !== "new-meal" && (
         <Box sx={{ mb: 4, mt: 4, width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
-        <Typography variant="h3" sx={{ mb: 2, fontWeight: 'bold' }}>Saved Meals</Typography>
-        <Button 
-          variant="contained" 
-          sx={{ mb: 2 }} 
-          className='primary-button'
-          onClick={() => navigate('/new-meal?mealType=new-meal')}
-        >
-          Add a New Meal
-        </Button>
+            <Typography variant="h3" sx={{ mb: 2, fontWeight: 'bold' }}>Saved Meals</Typography>
+            <Button
+              variant="contained"
+              sx={{ mb: 2 }}
+              className='primary-button'
+              onClick={() => navigate('/new-meal?mealType=new-meal')}
+            >
+              Add a New Meal
+            </Button>
           </Box>
           <NutritionTable foodData={[]} />
         </Box>

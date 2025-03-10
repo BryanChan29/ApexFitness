@@ -98,6 +98,34 @@ const ProgressDashboard: React.FC = () => {
     ],
   };
 
+  const calculateTotalNutrition = () => {
+    const allMeals = [...breakfastData, ...lunchData, ...dinnerData, ...snackData];
+    
+    const total = allMeals.reduce(
+      (acc, item) => {
+        acc.calories += item.calories;
+        acc.carbs += item.carbs;
+        acc.fat += item.fat;
+        acc.protein += item.protein;
+        acc.sodium += item.sodium;
+        acc.sugar += item.sugar;
+        return acc;
+      },
+      { calories: 0, carbs: 0, fat: 0, protein: 0, sodium: 0, sugar: 0 }
+    );
+  
+    return [
+      {
+        id: 0,
+        name: 'Total',
+        meal_type: 'total',
+        quantity: '',
+        ...total,
+        date: format(selectedDate, "yyyy-MM-dd"),
+      },
+    ];
+  };
+
   return (
     <Container maxWidth="lg" sx={{ mb: 4 }}>
       <Box display="flex" flexDirection="column" alignItems="center">
@@ -184,8 +212,8 @@ const ProgressDashboard: React.FC = () => {
           <Typography variant="h3" sx={{ mb: 2, fontWeight: 'bold' }}>
             Total
           </Typography>
-          <NutritionTable foodData={[]} />
-        </Box>
+            <NutritionTable foodData={calculateTotalNutrition()} />
+          </Box>
       </Box>
     </Container>
   );
