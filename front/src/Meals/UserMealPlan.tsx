@@ -7,9 +7,15 @@ import { useNavigate } from 'react-router-dom';
 
 function UserMealPlans() {
   const [mealPlans, setMealPlans] = useState<
-    { id: number; data: UIFormattedMealPlan; name: string }[]
+    {
+      id: number;
+      data: UIFormattedMealPlan;
+      name: string;
+      is_private: boolean;
+    }[]
   >([]);
-  const [allMealPlanIds, setAllMealPlanIds] = useState<number[]>([]);
+  const [allMealPlanIdsAndVisibility, setAllMealPlanIdsAndVisibility] =
+    useState<{ meal_plan_id: number; is_private: boolean }[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
 
   const navigate = useNavigate();
@@ -18,40 +24,57 @@ function UserMealPlans() {
     axios
       .get('/api/user/meal_plan', { withCredentials: true })
       .then((res) => {
-        const mealPlanIds = res.data.meal_plan_ids as number[];
-        setAllMealPlanIds(mealPlanIds);
+        const mealPlanIdAndPublicModifier = res.data.meal_plans as {
+          meal_plan_id: number;
+          is_private: boolean;
+        }[];
 
-        if (mealPlanIds.length === 0) {
+        setAllMealPlanIdsAndVisibility(mealPlanIdAndPublicModifier);
+
+        if (mealPlanIdAndPublicModifier.length === 0) {
           console.log('No meal plans found');
-          setMealPlans([]); // Ensure UI updates correctly
+          setMealPlans([]);
           setLoading(false);
           return;
         }
 
-        // Fetch all meal plans dynamically when IDs are loaded
         return Promise.all(
-          mealPlanIds.map((id) =>
+          mealPlanIdAndPublicModifier.map((plan) =>
             axios
-              .get(`/api/meal_plan/${id}`, { withCredentials: true })
+              .get(`/api/meal_plan/${plan.meal_plan_id}`, {
+                withCredentials: true,
+              })
               .then((res) => ({
-                id,
+                id: plan.meal_plan_id, // Use correct ID
                 data: res.data.result as UIFormattedMealPlan,
                 name: res.data.name,
+                is_private: plan.is_private, // Include visibility for frontend
               }))
               .catch((err) => {
-                console.error(`Error fetching meal plan ${id}:`, err);
+                console.error(
+                  `Error fetching meal plan ${plan.meal_plan_id}:`,
+                  err
+                );
                 return null; // Handle failed fetches
               })
           )
         );
       })
       .then((results) => {
-        if (!results) return; // If no meal plans, avoid setting state
-        const validMealPlans = results.filter((plan) => plan !== null) as {
-          id: number;
-          data: UIFormattedMealPlan;
-          name: string;
-        }[];
+        // ? If there are no meal plans, avoid setting state
+        if (!results) return;
+
+        const validMealPlans = results.filter(
+          (
+            plan
+          ): plan is {
+            id: number;
+            data: UIFormattedMealPlan;
+            name: string;
+            is_private: boolean;
+          } => plan !== null
+        );
+
         setMealPlans(validMealPlans);
         setLoading(false);
       })
@@ -65,27 +88,37 @@ function UserMealPlans() {
 
   return (
     <div>
-      <h2>User Meal Plans</h2>
-      {mealPlans.length === 0 || allMealPlanIds.length === 0 ? (
-        <p>No meal plans found, create one below!</p>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginBottom: '20px',
+        }}
+      >
+        <h2 style={{ margin: 0 }}>User Meal Plans</h2>
+        <Button
+          variant="contained"
+          color="primary"
+          style={{ borderRadius: '25px' }}
+          onClick={() => navigate('/new-meal-plan')}
+        >
+          Add New Meal Plan
+        </Button>
+      </div>
+      {mealPlans.length === 0 || allMealPlanIdsAndVisibility.length === 0 ? (
+        <p>No meal plans found, create a new one!</p>
       ) : (
         mealPlans.map((mealPlan) => (
           <MealPlan
             key={mealPlan.id}
             mealPlan={mealPlan.data}
             mealPlanName={mealPlan.name}
-            isMealPublic={false}
+            isMealPublic={mealPlan.is_private}
+            mealPlanId={mealPlan.id.toString()}
           />
         ))
       )}
-      <Button
-        variant="contained"
-        color="primary"
-        style={{ marginTop: '20px', borderRadius: '25px' }}
-        onClick={() => navigate('/new-meal-plan')}
-      >
-        Add New Meal Plan
-      </Button>
     </div>
   );
 }
