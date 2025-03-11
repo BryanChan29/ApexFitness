@@ -8,6 +8,7 @@ CREATE TABLE users (
     goal_weight INTEGER,
     height INTEGER,
     age INTEGER,
+    gender VARCHAR(10),
     activity_level VARCHAR(25)
 );
 
@@ -15,14 +16,16 @@ CREATE TABLE users (
 CREATE TABLE daily_food ( 
     id INTEGER PRIMARY KEY AUTOINCREMENT, 
     user_id VARCHAR(50) NOT NULL,
-    meal_type VARCHAR(50) NOT NULL, 
+    meal_type VARCHAR(50) NOT NULL,
     name VARCHAR(50) NOT NULL,
+    quantity VARCHAR(50) NOT NULL,
     calories INTEGER NOT NULL,
     carbs INTEGER NOT NULL,
     fat INTEGER NOT NULL,
     protein INTEGER NOT NULL,
     sodium INTEGER NOT NULL,
     sugar INTEGER NOT NULL,
+    date TEXT NOT NULL,
     FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 

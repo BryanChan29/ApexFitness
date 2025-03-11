@@ -21,12 +21,9 @@ const __curr_dirname = path.dirname(__filename);
 
 dotenv.config({ path: path.resolve(__curr_dirname, '../../.env') });
 
-if (
-  !process.env.FATSECRET_CONSUMER_KEY ||
-  !process.env.FATSECRET_CLIENT_SECRET
-) {
+if (!process.env.FATSECRET_CLIENT_SECRET || !process.env.FATSECRET_CLIENT_ID) {
   throw new Error(
-    'FATSECRET_CONSUMER_KEY and/or FATSECRET_CLIENT_SECRET is not defined in .env file'
+    'FATSECRET_CLIENT_ID and/or FATSECRET_CLIENT_SECRET is not defined in .env file'
   );
 }
 const BURN_API_URL = 'https://api.api-ninjas.com/v1/caloriesburned';
@@ -425,22 +422,22 @@ app.put('/api/meal_plan', async (req, res) => {
   }
 });
 
-requestRouter.get('/daily_food', async (req, res) => {
-  // TODO: work on permissions, but for now just return everything in `daily_food` table
-  let result: DBDailyFoodItem[];
+// requestRouter.get('/daily_food', async (req, res) => {
+//   // TODO: work on permissions, but for now just return everything in `daily_food` table
+//   let result: DBDailyFoodItem[];
 
-  try {
-    result = await db.all('SELECT * FROM daily_food');
-    if (result.length === 0) {
-      return res.status(404).json({ error: 'No meals found' });
-    }
-  } catch (err) {
-    const error = err as object;
-    return res.status(500).json({ error: error.toString() });
-  }
+//   try {
+//     result = await db.all('SELECT * FROM daily_food');
+//     if (result.length === 0) {
+//       return res.status(404).json({ error: 'No meals found' });
+//     }
+//   } catch (err) {
+//     const error = err as object;
+//     return res.status(500).json({ error: error.toString() });
+//   }
 
-  return res.json({ result });
-});
+//   return res.json({ result });
+// });
 
 requestRouter.get('/meal_plan/:id', async (req, res) => {
   let result: { day_of_week: string; daily_foods: string; name: string }[];
@@ -478,7 +475,7 @@ requestRouter.get('/meal_plan/:id', async (req, res) => {
     result = await db.all(query, [mealPlanId]);
 
     if (!result || result.length === 0) {
-      return res.json({ name: '', result: undefined });
+      return res.json({ name: '', result: {} });
     }
 
     const formattedMealPlan: Partial<UIFormattedMealPlan> = {};
@@ -611,6 +608,23 @@ app.get(
   }
 );
 
+requestRouter.get('/meal_plans', async (req, res) => {
+  let result;
+  try {
+    result = await db.all('SELECT * FROM meal_plans WHERE is_private = 0;');
+
+    if (!result || result.length === 0) {
+      console.log('public meal plans found.');
+      return res.status(404).json({ error: 'No public meal plans found' });
+    }
+
+    return res.json({ result });
+  } catch (err: any) {
+    console.error('Error in /meal_plans:', err);
+    return res.status(500).json({ error: err.toString() });
+  }
+});
+
 app.get(
   '/api/food-detail',
   authenticateFatSecret,
@@ -669,13 +683,13 @@ app.get('/api/user', async (req: Request, res: Response) => {
 
 // PATCH endpoint for updating body metrics
 app.patch('/api/user/metrics', async (req: Request, res: Response) => {
-  // Retrieve token from cookies (make sure cookie-parser middleware is enabled)
+  // Retrieve token from cookies (using token-based authentication)
   const { token } = req.cookies;
   if (!token || !tokenStorage[token]) {
     return res.status(401).json({ error: 'Not authenticated' });
   }
 
-  // Retrieve the user's email from the token storage
+  // Retrieve the user's email from tokenStorage
   const userEmail = tokenStorage[token];
 
   try {
@@ -709,7 +723,41 @@ app.patch('/api/user/metrics', async (req: Request, res: Response) => {
       userEmail
     );
 
-    // Retrieve the updated user record and return it
+    // If a new current weight is provided, log it in the history table (limit to one entry per day)
+    if (current_weight !== undefined && current_weight !== null) {
+      // Get today's date in YYYY-MM-DD format
+      const today = new Date().toLocaleDateString('en-CA');
+
+      // Check if there's already an entry for today for this user
+      const existingEntry = await db.get(
+        `SELECT * FROM user_weight_history 
+         WHERE user_id = ? AND date(date_recorded) = ?`,
+        [existingUser.id, today]
+      );
+
+      if (existingEntry) {
+        // Update the existing entry's weight
+        await db.run(
+          `UPDATE user_weight_history 
+           SET weight = ? 
+           WHERE id = ?`,
+          current_weight,
+          existingEntry.id
+        );
+      } else {
+        // Insert a new entry if none exists for today
+        const date_recorded = new Date().toISOString();
+        await db.run(
+          `INSERT INTO user_weight_history (user_id, date_recorded, weight)
+           VALUES (?, ?, ?)`,
+          existingUser.id,
+          date_recorded,
+          current_weight
+        );
+      }
+    }
+
+    // Retrieve and return the updated user record
     const updatedUser = await db.get('SELECT * FROM users WHERE email = ?', [
       userEmail,
     ]);
@@ -720,9 +768,150 @@ app.patch('/api/user/metrics', async (req: Request, res: Response) => {
   }
 });
 
+// Workouts Endpoints
+app.post('/api/workouts', async (req, res) => {
+  const { name, date, exercises } = req.body;
+  const userId = await getUserIdFromCookies(req.cookies.token);
+
+  if (!userId) {
+    return res.status(401).json({ error: 'Not authenticated' });
+  }
+
+  if (!name || !date) {
+    return res.status(400).json({ error: 'Name and date are required' });
+  }
+
+  try {
+    const workoutStatement = await db.prepare(
+      'INSERT INTO workouts (user_id, name, date) VALUES (?, ?, ?)'
+    );
+    const workoutResult = await workoutStatement.run(userId, name, date);
+    const workoutId = workoutResult.lastID;
+
+    if (exercises && Array.isArray(exercises)) {
+      for (const exercise of exercises) {
+        let exerciseStatement;
+        let exerciseResult;
+        if (exercise.hasOwnProperty('caloriesBurned')) {
+          exerciseStatement = await db.prepare(
+            'INSERT INTO exercises (name_of_workout, duration, calories_per_hour) VALUES (?, ?, ?)'
+          );
+          exerciseResult = await exerciseStatement.run(
+            exercise.workoutType,
+            exercise.duration,
+            exercise.caloriesBurned
+          );
+        } else {
+          exerciseStatement = await db.prepare(
+            'INSERT INTO exercises (name_of_workout, sets, reps, weight) VALUES (?, ?, ?, ?)'
+          );
+          exerciseResult = await exerciseStatement.run(
+            exercise.workoutType,
+            exercise.sets,
+            exercise.reps,
+            exercise.weight
+          );
+        }
+
+        const exerciseId = exerciseResult.lastID;
+
+        const workoutExerciseStatement = await db.prepare(
+          'INSERT INTO workout_exercises (workout_id, exercise_id) VALUES (?, ?)'
+        );
+        await workoutExerciseStatement.run(workoutId, exerciseId);
+      }
+    }
+
+    return res.json({
+      message: 'Workout created successfully',
+      workoutId: workoutId,
+    });
+  } catch (error) {
+    console.error('Error creating workout:', error);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.get('/api/workouts', async (req, res) => {
+  const userId = await getUserIdFromCookies(req.cookies.token);
+
+  if (!userId) {
+    return res.status(401).json({ error: 'Not authenticated' });
+  }
+
+  try {
+    const workouts = await db.all('SELECT * FROM workouts WHERE user_id = ?', [
+      userId,
+    ]);
+    return res.json({ workouts });
+  } catch (error) {
+    console.error('Error retrieving workouts:', error);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.post('/api/workouts/:workoutId/exercises', async (req, res) => {
+  const { name_of_workout, muscle_worked, duration, sets, reps, weight } =
+    req.body;
+  const workoutId = parseInt(req.params.workoutId, 10);
+
+  if (isNaN(workoutId)) {
+    return res.status(400).json({ error: 'Invalid workout ID' });
+  }
+
+  if (!name_of_workout) {
+    return res.status(400).json({ error: 'Exercise name is required' });
+  }
+
+  try {
+    const exerciseStatement = await db.prepare(
+      'INSERT INTO exercises (name_of_workout, muscle_worked, duration, sets, reps, weight) VALUES (?, ?, ?, ?, ?, ?)'
+    );
+    const exerciseResult = await exerciseStatement.run(
+      name_of_workout,
+      muscle_worked,
+      duration,
+      sets,
+      reps,
+      weight
+    );
+
+    const workoutExerciseStatement = await db.prepare(
+      'INSERT INTO workout_exercises (workout_id, exercise_id) VALUES (?, ?)'
+    );
+    await workoutExerciseStatement.run(workoutId, exerciseResult.lastID);
+
+    return res.json({
+      message: 'Exercise added to workout successfully',
+    });
+  } catch (error) {
+    console.error('Error adding exercise to workout:', error);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.get('/api/workouts/:workoutId/exercises', async (req, res) => {
+  const workoutId = parseInt(req.params.workoutId, 10);
+
+  if (isNaN(workoutId)) {
+    return res.status(400).json({ error: 'Invalid workout ID' });
+  }
+
+  try {
+    const exercises = await db.all(
+      `SELECT e.* FROM exercises e JOIN workout_exercises we ON e.id = we.exercise_id WHERE we.workout_id = ?`,
+      [workoutId]
+    );
+    return res.json({ exercises });
+  } catch (error) {
+    console.error('Error retrieving exercises:', error);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 app.get('/api/calories-burned', async (req: Request, res: Response) => {
   try {
-    console.log('Burn handler');
+    // console.log('Burn handler');
     const activity = req.query.activity as string;
     if (!activity) {
       return res.status(400).json({ error: 'Activity parameter is required' });
@@ -740,27 +929,94 @@ app.get('/api/calories-burned', async (req: Request, res: Response) => {
     } else {
       res.status(response.status).json({ error: response.data });
     }
-
-    // Simulate API response for testing
-    //   const simulatedResponse = {
-    //     data: [
-    //         {
-    //             name: activity,
-    //             calories_per_hour: 300, // Example value
-    //             duration_minutes: 60, // Example value
-    //             total_calories: 300, // Example value
-    //         },
-    //         // Add more simulated data if needed
-    //     ],
-    //     status: 200,
-    //     statusText: 'OK',
-    //     headers: {},
-    //     config: {},
-    // };
-    // res.json(simulatedResponse.data);
   } catch (error) {
     console.error('Error fetching calories burned data:', error);
     res.status(500).json({ error: 'Failed to fetch calories burned data' });
+  }
+});
+
+app.get('/api/daily_food', async (req: Request, res: Response) => {
+  const user_id = await getUserIdFromCookies(req.cookies.token);
+  const { date, meal_type } = req.query;
+
+  if (!user_id || !date || !meal_type) {
+    return res
+      .status(400)
+      .json({ error: 'Date, and meal type are required inputs' });
+  }
+
+  try {
+    const query = `
+      SELECT * FROM daily_food 
+      WHERE user_id = ? AND date = ? AND meal_type = ?
+    `;
+    const result = await db.all(query, [user_id, date, meal_type]);
+
+    if (result.length === 0) {
+      return res.json({ result: [] });
+    }
+
+    return res.json({ result });
+  } catch (error) {
+    console.error('Error fetching daily food entries:', error);
+    return res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
+app.post('/api/daily_food', async (req: Request, res: Response) => {
+  const user_id = await getUserIdFromCookies(req.cookies.token);
+  const {
+    meal_type,
+    name,
+    quantity,
+    calories,
+    carbs,
+    fat,
+    protein,
+    sodium,
+    sugar,
+    date,
+  } = req.body;
+
+  if (
+    meal_type == null ||
+    name == null ||
+    calories == null ||
+    carbs == null ||
+    fat == null ||
+    protein == null ||
+    quantity == null
+  ) {
+    return res.status(400).json({ error: 'All fields are required' });
+  }
+
+  try {
+    const statement = await db.prepare(
+      'INSERT INTO daily_food (user_id, meal_type, name, quantity, calories, carbs, fat, protein, sodium, sugar, date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+    );
+    const result = await statement.run(
+      user_id,
+      meal_type,
+      name,
+      quantity,
+      calories,
+      carbs,
+      fat,
+      protein,
+      sodium,
+      sugar,
+      date
+    );
+
+    return res
+      .status(201)
+      .json({
+        message: 'Daily food item added successfully',
+        id: result.lastID,
+      });
+  } catch (error) {
+    console.error('Error inserting daily food item:', error);
+    return res.status(500).json({ error: 'Internal Server Error' });
   }
 });
 

@@ -28,7 +28,6 @@ function SavedMeals() {
     try {
       // ? hardcode it for now...
       // ? end goal is to grab all meals from the user?
-      const mealToShow = 1;
       const routeToCall = `api/meals/${1}`;
       const response = await axios.get(routeToCall);
       console.log(response);

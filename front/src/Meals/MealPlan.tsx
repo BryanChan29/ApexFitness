@@ -18,10 +18,11 @@ import { UIDailyMeal, UIFormattedMealPlan } from '@apex/shared';
 interface MealPlanProps {
   mealPlan: UIFormattedMealPlan;
   mealPlanName: string;
+  isMealPublic: boolean;
 }
 
-function MealPlan({ mealPlan, mealPlanName }: MealPlanProps) {
-  const [isPublic, setIsPublic] = useState<boolean>(false);
+function MealPlan({ mealPlan, mealPlanName, isMealPublic }: MealPlanProps) {
+  const [isPublic, setIsPublic] = useState<boolean>(isMealPublic);
 
   function handlePublicModifier(
     event: React.ChangeEvent<HTMLInputElement>
@@ -126,6 +127,14 @@ function MealPlan({ mealPlan, mealPlanName }: MealPlanProps) {
           )}
         </div>
       </TableContainer>
+      <Button
+        variant="contained"
+        color="primary"
+        style={{ marginTop: '20px'}}
+        className='primary-button'
+      >
+        Add New Meal Plan
+      </Button>
     </div>
   );
 }

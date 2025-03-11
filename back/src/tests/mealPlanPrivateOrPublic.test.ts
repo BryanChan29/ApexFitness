@@ -205,4 +205,53 @@ describe('Meal Plan API', () => {
       });
     }
   });
+
+  test('GET /meal_plans - Retrieve all public meal plans', async () => {
+    // Create two meal plans: one public, one private
+    await axios.post(`${baseUrl}/meal_plan`, {
+      name: 'Weekly Plan',
+      isPrivate: false,
+    });
+
+    await axios.post(`${baseUrl}/meal_plan`, {
+      name: 'Private Meal Plan 2',
+      isPrivate: true,
+    });
+    const dbCheck = await db.all(
+      'SELECT * FROM meal_plans WHERE is_private = 0;'
+    );
+    console.log('📌 Meal Plans in DB (before fetch):', dbCheck);
+
+    // Fetch public meal plans
+    const response = await axios.get(`${baseUrl}/meal_plans`);
+
+    expect(response.status).toBe(200);
+    expect(response.data.result).toBeInstanceOf(Array);
+    expect(response.data.result.length).toBeGreaterThan(0);
+
+    // Ensure only public meal plans are returned
+    response.data.result.forEach((mealPlan: any) => {
+      expect(mealPlan).toHaveProperty('id');
+      expect(mealPlan).toHaveProperty('is_private');
+      expect(mealPlan).toHaveProperty('name');
+    });
+    expect(response.data.result).toEqual([
+      { id: 1, is_private: 0, name: 'Weekly Plan' },
+    ]);
+  });
+
+  test('GET /meal_plans - No public meal plans exist', async () => {
+    // Ensure the database is empty before this test
+    await resetDb();
+
+    try {
+      await axios.get(`${baseUrl}/meal_plans`);
+    } catch (error) {
+      const caughtError = error as AxiosError;
+      expect(caughtError.response?.status).toBe(404);
+      expect(caughtError.response?.data).toEqual({
+        error: 'No public meal plans found',
+      });
+    }
+  });
 });

@@ -112,6 +112,38 @@ const WorkoutPage: React.FC = () => {
     handleCloseSearchResultsModal();
   };
 
+  const handleSaveCardioWorkout = async () => {
+    try {
+      const response = await axios.post('/api/workouts', {
+        name: 'Cardio Workout', // You can customize the workout name
+        date: new Date().toISOString(), // Current date/time
+        exercises: cardioData, // Send cardioData as exercises
+      });
+      console.log('Workout saved:', response.data);
+      // Optionally, clear the cardioData or show a success message
+      setCardioData([]);
+    } catch (error) {
+      console.error('Error saving workout:', error);
+      // Handle error (e.g., show an error message)
+    }
+  };
+
+  const handleSaveStrengthWorkout = async () => {
+    try {
+      const response = await axios.post('/api/workouts', {
+        name: 'Strength Workout', // Customize workout name if needed
+        date: new Date().toISOString(),
+        exercises: strengthData, // Send strengthData as exercises
+      });
+      console.log('Strength workout saved:', response.data);
+      // Optionally, clear strengthData or show a success message
+      setStrengthData([]);
+    } catch (error) {
+      console.error('Error saving strength workout:', error);
+      // Handle error (e.g., show an error message)
+    }
+  };
+
   const cardioModal = (
     <Modal open={openCardioModal} onClose={handleCloseCardioModal}>
       <Box sx={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: 400, bgcolor: 'background.paper', boxShadow: 24, p: 4 }}>
@@ -211,7 +243,10 @@ const searchResultsModal = (
               </Table>
             </TableContainer>
             <Box sx={{ mt: 2 }}>
-              <Button variant="contained" color="primary" onClick={handleOpenCardioModal}>Add Cardio Workout</Button>
+              <Button variant="contained" className='primary-button' onClick={handleOpenCardioModal}>Add Cardio Workout</Button>
+              <Button variant="contained" onClick={handleSaveCardioWorkout} sx={{ ml: 2 }} className='primary-button'>
+                Save Cardio Workout
+              </Button>
             </Box>
           </Paper>
         </Grid>
@@ -247,13 +282,49 @@ const searchResultsModal = (
               </Table>
             </TableContainer>
             <Box sx={{ mt: 2 }}>
-              <Button variant="contained" color="primary" onClick={handleOpenStrengthModal}>Add Strength Workout</Button>
+              <Button variant="contained" color="primary" onClick={handleOpenStrengthModal} sx={{ ml: 2, mb: 2 }} className='primary-button'>Add Strength Workout</Button>
             </Box>
+            <Button variant="contained" color="secondary" onClick={handleSaveStrengthWorkout} sx={{ ml: 2 }} className='primary-button'>
+              Save Strength Workout
+            </Button>
           </Paper>
         </Grid>
       </Grid>
 
       {strengthModal}
+
+        <Grid item xs={12} md={4}>
+          <Paper
+            sx={{
+              p: 2,
+              display: 'flex',
+              flexDirection: 'column',
+              width: '30%',
+              height: '100%',
+              borderRadius: 10,
+              marginTop: 5,
+            }}
+          >
+            <Typography variant="subtitle1" color="text.secondary">
+              Last logged weight
+            </Typography>
+            <Typography variant="body2">Wed, Feb 13, 2025</Typography>
+
+            <Typography variant="h2" sx={{ mt: 2, mb: 1, fontWeight: 'bold' }}>
+              211.5 lbs
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Goal: 200 lbs
+            </Typography>
+
+            {/* Button at bottom */}
+            <Box sx={{ mt: 'auto' }}>
+                <Button variant="contained" color="primary" className="primary-button">
+                Log New Weight
+                </Button>
+            </Box>
+          </Paper>
+        </Grid>
     </Container>
   );
 };
