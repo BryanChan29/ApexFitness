@@ -9,12 +9,11 @@ INSERT INTO daily_food (id, user_id, meal_type, name, quantity, calories, carbs,
 (2, 'user1', 'lunch', 'Soup and sandwich meal', '1 meal', 567, 10, 14, 56, 1400, 3, '2025-03-08');
 
 -- Meal one solely consists of the chicken stir fry dish
-INSERT INTO meals (id, date, saved_meal) VALUES(10, '02/18/2025', false);
+INSERT INTO meals (id, name, date, user_id) VALUES(10, 'Chicken Stir-fry with White rice', '02/18/2025', 'user1');
 INSERT INTO meal_items (meal_id, food_id) VALUES(10, 1);
 
-INSERT INTO meals (id, date, saved_meal) VALUES(11, '02/18/2025', false);
+INSERT INTO meals (id, name, date, user_id) VALUES(11, 'Soup and sandwich meal', '02/18/2025', 'user1');
 INSERT INTO meal_items (meal_id, food_id) VALUES(11, 2);
-
 
 INSERT INTO meal_plan_items (meal_plan_id, meal_id, day_of_week) VALUES 
 (100, 10, 'tuesday'),
@@ -40,6 +39,7 @@ INSERT INTO meal_plans (id, name, is_private) VALUES (17, 'Meal plan 17', 0);
 INSERT INTO meal_plans (id, name, is_private) VALUES (18, 'Meal plan 18', 1);
 INSERT INTO meal_plans (id, name, is_private) VALUES (19, 'Meal plan 19', 0);
 INSERT INTO meal_plans (id, name, is_private) VALUES (20, 'Meal plan 20', 1);
+
 INSERT INTO daily_food (id, user_id, meal_type, name, quantity, calories, carbs, fat, protein, sodium, sugar, date) VALUES
 (100, 'user1', 'dinner', 'Test Food 1', '1 serving', 100, 10, 5, 8, 200, 2, '2025-03-07'),
 (101, 'user1', 'dinner', 'Test Food 2', '1 serving', 110, 12, 6, 9, 205, 3, '2025-03-07'),
@@ -61,26 +61,28 @@ INSERT INTO daily_food (id, user_id, meal_type, name, quantity, calories, carbs,
 (117, 'user1', 'dinner', 'Test Food 18', '1 serving', 270, 44, 22, 25, 285, 19, '2025-03-07'),
 (118, 'user1', 'dinner', 'Test Food 19', '1 serving', 280, 46, 23, 26, 290, 20, '2025-03-07'),
 (119, 'user1', 'dinner', 'Test Food 20', '1 serving', 290, 48, 24, 27, 295, 21, '2025-03-07');
-INSERT INTO meals (id, date, saved_meal) VALUES(200, '03/07/2025', false);
-INSERT INTO meals (id, date, saved_meal) VALUES(201, '03/07/2025', false);
-INSERT INTO meals (id, date, saved_meal) VALUES(202, '03/07/2025', false);
-INSERT INTO meals (id, date, saved_meal) VALUES(203, '03/07/2025', false);
-INSERT INTO meals (id, date, saved_meal) VALUES(204, '03/07/2025', false);
-INSERT INTO meals (id, date, saved_meal) VALUES(205, '03/07/2025', false);
-INSERT INTO meals (id, date, saved_meal) VALUES(206, '03/07/2025', false);
-INSERT INTO meals (id, date, saved_meal) VALUES(207, '03/07/2025', false);
-INSERT INTO meals (id, date, saved_meal) VALUES(208, '03/07/2025', false);
-INSERT INTO meals (id, date, saved_meal) VALUES(209, '03/07/2025', false);
-INSERT INTO meals (id, date, saved_meal) VALUES(210, '03/07/2025', false);
-INSERT INTO meals (id, date, saved_meal) VALUES(211, '03/07/2025', false);
-INSERT INTO meals (id, date, saved_meal) VALUES(212, '03/07/2025', false);
-INSERT INTO meals (id, date, saved_meal) VALUES(213, '03/07/2025', false);
-INSERT INTO meals (id, date, saved_meal) VALUES(214, '03/07/2025', false);
-INSERT INTO meals (id, date, saved_meal) VALUES(215, '03/07/2025', false);
-INSERT INTO meals (id, date, saved_meal) VALUES(216, '03/07/2025', false);
-INSERT INTO meals (id, date, saved_meal) VALUES(217, '03/07/2025', false);
-INSERT INTO meals (id, date, saved_meal) VALUES(218, '03/07/2025', false);
-INSERT INTO meals (id, date, saved_meal) VALUES(219, '03/07/2025', false);
+
+INSERT INTO meals (id, name, date, user_id) VALUES(200, 'Meal 1', '03/07/2025', 'user1');
+INSERT INTO meals (id, name, date, user_id) VALUES(201, 'Meal 2', '03/07/2025', 'user1');
+INSERT INTO meals (id, name, date, user_id) VALUES(202, 'Meal 3', '03/07/2025', 'user1');
+INSERT INTO meals (id, name, date, user_id) VALUES(203, 'Meal 4', '03/07/2025', 'user1');
+INSERT INTO meals (id, name, date, user_id) VALUES(204, 'Meal 5', '03/07/2025', 'user1');
+INSERT INTO meals (id, name, date, user_id) VALUES(205, 'Meal 6', '03/07/2025', 'user1');
+INSERT INTO meals (id, name, date, user_id) VALUES(206, 'Meal 7', '03/07/2025', 'user1');
+INSERT INTO meals (id, name, date, user_id) VALUES(207, 'Meal 8', '03/07/2025', 'user1');
+INSERT INTO meals (id, name, date, user_id) VALUES(208, 'Meal 9', '03/07/2025', 'user1');
+INSERT INTO meals (id, name, date, user_id) VALUES(209, 'Meal 10', '03/07/2025', 'user1');
+INSERT INTO meals (id, name, date, user_id) VALUES(210, 'Meal 11', '03/07/2025', 'user1');
+INSERT INTO meals (id, name, date, user_id) VALUES(211, 'Meal 12', '03/07/2025', 'user1');
+INSERT INTO meals (id, name, date, user_id) VALUES(212, 'Meal 13', '03/07/2025', 'user1');
+INSERT INTO meals (id, name, date, user_id) VALUES(213, 'Meal 14', '03/07/2025', 'user1');
+INSERT INTO meals (id, name, date, user_id) VALUES(214, 'Meal 15', '03/07/2025', 'user1');
+INSERT INTO meals (id, name, date, user_id) VALUES(215, 'Meal 16', '03/07/2025', 'user1');
+INSERT INTO meals (id, name, date, user_id) VALUES(216, 'Meal 17', '03/07/2025', 'user1');
+INSERT INTO meals (id, name, date, user_id) VALUES(217, 'Meal 18', '03/07/2025', 'user1');
+INSERT INTO meals (id, name, date, user_id) VALUES(218, 'Meal 19', '03/07/2025', 'user1');
+INSERT INTO meals (id, name, date, user_id) VALUES(219, 'Meal 20', '03/07/2025', 'user1');
+
 INSERT INTO meal_items (meal_id, food_id) VALUES(200, 100);
 INSERT INTO meal_items (meal_id, food_id) VALUES(201, 101);
 INSERT INTO meal_items (meal_id, food_id) VALUES(202, 102);
@@ -101,6 +103,7 @@ INSERT INTO meal_items (meal_id, food_id) VALUES(216, 116);
 INSERT INTO meal_items (meal_id, food_id) VALUES(217, 117);
 INSERT INTO meal_items (meal_id, food_id) VALUES(218, 118);
 INSERT INTO meal_items (meal_id, food_id) VALUES(219, 119);
+
 INSERT INTO meal_plan_items (meal_plan_id, meal_id, day_of_week) VALUES (1, 200, 'monday');
 INSERT INTO meal_plan_items (meal_plan_id, meal_id, day_of_week) VALUES (2, 201, 'tuesday');
 INSERT INTO meal_plan_items (meal_plan_id, meal_id, day_of_week) VALUES (3, 202, 'wednesday');

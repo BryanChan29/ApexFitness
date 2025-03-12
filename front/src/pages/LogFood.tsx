@@ -313,13 +313,8 @@ const LogFood = ({ onAddMealItem }: { onAddMealItem?: (foodItem: any) => void })
     fetchSavedMeals();
   }, []);
 
-
   if (loadingSavedMeals) {
     return <div>Loading saved meals...</div>;
-  }
-
-  if (!savedMeals.length) {
-    return <div>No saved meals found.</div>;
   }
 
   return (

@@ -1054,7 +1054,7 @@ app.get('/api/meals', async (req: Request, res: Response) => {
     const meals = await db.all(mealsQuery, [user_id]);
 
     if (meals.length === 0) {
-      return res.status(404).json({ error: 'No meals found for this user' });
+      return res.json({ meals: [] });
     }
 
     const mealsWithItems = await Promise.all(
