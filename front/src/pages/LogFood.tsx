@@ -328,6 +328,8 @@ const LogFood = ({ onAddMealItem }: { onAddMealItem?: (foodItem: any) => void })
         display: "flex",
         flexDirection: "column",
         padding: "20px",
+        maxWidth: "1500px",
+        margin: "auto",
       }}
     >
       <Typography variant="h4" component="h1" sx={{ marginBottom: "20px" }}>

@@ -64,47 +64,63 @@ const NutritionTable: React.FC<NutritionTableProps> = ({ foodData, summation = f
         <Table>
           <TableHead>
             <TableRow>
-              <TableCell><Typography fontWeight="bold">Food</Typography></TableCell>
-              <TableCell align="right"><Typography fontWeight="bold">Quantity</Typography></TableCell>
-              <TableCell align="right"><Typography fontWeight="bold">Calories</Typography></TableCell>
-              <TableCell align="right"><Typography fontWeight="bold">Carbs</Typography></TableCell>
-              <TableCell align="right"><Typography fontWeight="bold">Fat</Typography></TableCell>
-              <TableCell align="right"><Typography fontWeight="bold">Protein</Typography></TableCell>
-              <TableCell align="right"><Typography fontWeight="bold">Sodium</Typography></TableCell>
-              <TableCell align="right"><Typography fontWeight="bold">Sugar</Typography></TableCell>
+              <TableCell sx={{ width: '30%' }}><Typography fontWeight="bold">Food</Typography></TableCell>
+              <TableCell align="right" sx={{ width: '20%' }}><Typography fontWeight="bold">Quantity</Typography></TableCell>
+              <TableCell align="right" sx={{ width: '10%' }}><Typography fontWeight="bold">Calories</Typography></TableCell>
+              <TableCell align="right" sx={{ width: '10%' }}><Typography fontWeight="bold">Carbs</Typography></TableCell>
+              <TableCell align="right" sx={{ width: '10%' }}><Typography fontWeight="bold">Fat</Typography></TableCell>
+              <TableCell align="right" sx={{ width: '10%' }}><Typography fontWeight="bold">Protein</Typography></TableCell>
+              <TableCell align="right" sx={{ width: '10%' }}><Typography fontWeight="bold">Sodium</Typography></TableCell>
+              <TableCell align="right" sx={{ width: '10%' }}><Typography fontWeight="bold">Sugar</Typography></TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {!summation && foodData.map((item) => (
               <TableRow key={item.id}>
-                <TableCell>{item.name}</TableCell>
-                <TableCell align="right">{item.quantity}</TableCell>
-                <TableCell align="right">{Math.round(item.calories)} cal</TableCell>
-                <TableCell align="right">{Math.round(item.carbs)}g</TableCell>
-                <TableCell align="right">{Math.round(item.fat)}g</TableCell>
-                <TableCell align="right">{Math.round(item.protein)}g</TableCell>
-                <TableCell align="right">{Math.round(item.sodium)}mg</TableCell>
-                <TableCell align="right">{Math.round(item.sugar)}g</TableCell>
+                <TableCell sx={{ width: '30%' }}>{item.name}</TableCell>
+                <TableCell align="right" sx={{ width: '20%' }}>{item.quantity}</TableCell>
+                <TableCell align="right" sx={{ width: '10%' }}>{Math.round(item.calories)} cal</TableCell>
+                <TableCell align="right" sx={{ width: '10%' }}>{Math.round(item.carbs)}g</TableCell>
+                <TableCell align="right" sx={{ width: '10%' }}>{Math.round(item.fat)}g</TableCell>
+                <TableCell align="right" sx={{ width: '10%' }}>{Math.round(item.protein)}g</TableCell>
+                <TableCell align="right" sx={{ width: '10%' }}>{Math.round(item.sodium)}mg</TableCell>
+                <TableCell align="right" sx={{ width: '10%' }}>{Math.round(item.sugar)}g</TableCell>
               </TableRow>
             ))}
 
             {summation && (
               <TableRow>
-                <TableCell><Typography fontWeight="bold">{total.name}</Typography></TableCell>
-                <TableCell align="right"></TableCell>
-                <TableCell align="right"><Typography fontWeight="bold">{Math.round(total.calories)} cal</Typography></TableCell>
-                <TableCell align="right"><Typography fontWeight="bold">{Math.round(total.carbs)}g</Typography></TableCell>
-                <TableCell align="right"><Typography fontWeight="bold">{Math.round(total.fat)}g</Typography></TableCell>
-                <TableCell align="right"><Typography fontWeight="bold">{Math.round(total.protein)}g</Typography></TableCell>
-                <TableCell align="right"><Typography fontWeight="bold">{Math.round(total.sodium)}mg</Typography></TableCell>
-                <TableCell align="right"><Typography fontWeight="bold">{Math.round(total.sugar)}g</Typography></TableCell>
+                <TableCell sx={{ width: '30%' }}>
+                  <Typography fontWeight={mealName ? 'normal' : 'bold'}>{total.name}</Typography>
+                </TableCell>
+                <TableCell align="right" sx={{ width: '20%' }}>{mealName ? '1 serving' : ''}</TableCell>
+                <TableCell align="right" sx={{ width: '10%' }}>
+                  <Typography fontWeight={mealName ? 'normal' : 'bold'}>{Math.round(total.calories)} cal</Typography>
+                </TableCell>
+                <TableCell align="right" sx={{ width: '10%' }}>
+                  <Typography fontWeight={mealName ? 'normal' : 'bold'}>{Math.round(total.carbs)}g</Typography>
+                </TableCell>
+                <TableCell align="right" sx={{ width: '10%' }}>
+                  <Typography fontWeight={mealName ? 'normal' : 'bold'}>{Math.round(total.fat)}g</Typography>
+                </TableCell>
+                <TableCell align="right" sx={{ width: '10%' }}>
+                  <Typography fontWeight={mealName ? 'normal' : 'bold'}>{Math.round(total.protein)}g</Typography>
+                </TableCell>
+                <TableCell align="right" sx={{ width: '10%' }}>
+                  <Typography fontWeight={mealName ? 'normal' : 'bold'}>{Math.round(total.sodium)}mg</Typography>
+                </TableCell>
+                <TableCell align="right" sx={{ width: '10%' }}>
+                  <Typography fontWeight={mealName ? 'normal' : 'bold'}>{Math.round(total.sugar)}g</Typography>
+                </TableCell>
               </TableRow>
             )}
+
           </TableBody>
         </Table>
       </TableContainer>
     </Paper>
   );
 };
+
 
 export default NutritionTable;

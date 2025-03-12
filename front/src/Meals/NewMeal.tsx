@@ -45,7 +45,7 @@ const NewMeal: React.FC = () => {
           throw new Error('Error logging food item');
         }
       }
-  
+
       // After logging all food items, create the meal
       const mealResponse = await fetch('/api/meals', {
         method: 'POST',
@@ -57,7 +57,7 @@ const NewMeal: React.FC = () => {
           foodItems: loggedFoodIds.map((id) => ({ id })),
         }),
       });
-  
+
       const mealData = await mealResponse.json();
       if (mealResponse.ok) {
         console.log('Meal saved successfully:', mealData);
@@ -68,22 +68,22 @@ const NewMeal: React.FC = () => {
     } catch (error) {
       console.error('Error saving meal:', error);
     }
-  };  
+  };
 
   const isSaveDisabled = foodItems.length === 0 || mealPlanName.trim() === '';
 
   return (
-    <Box>
+    <Box sx={{ padding: '20px', maxWidth: '1500px', margin: '0 auto' }}>
       <LogFood onAddMealItem={handleFoodAdd} />
 
-      <Box sx={{ display: 'flex', justifyContent: 'flex-start', marginBottom: 2 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'flex-start', marginBottom: 2, maxWidth: '1500px', margin: 'auto' }}>
         <TextField
           label="Meal Name"
           value={mealPlanName}
           onChange={handleMealPlanNameChange}
           margin="normal"
           sx={{
-            width: '20%',
+            width: '30%',
           }}
           slotProps={{
             input: {
@@ -95,7 +95,10 @@ const NewMeal: React.FC = () => {
           }}
         />
       </Box>
-      <NutritionTable foodData={foodItems} />
+
+      <Box sx={{ width: '100%'}}>
+        <NutritionTable foodData={foodItems} />
+      </Box>
 
       {!isSaveDisabled && (
         <Button
@@ -103,12 +106,13 @@ const NewMeal: React.FC = () => {
           onClick={handleSaveMeal}
           variant="contained"
           color="primary"
+          sx={{ marginTop: '20px' }} // Add spacing above the button
         >
           Save Meal
         </Button>
       )}
     </Box>
   );
-};
+}
 
 export default NewMeal;
