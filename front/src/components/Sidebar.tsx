@@ -9,7 +9,7 @@ import {
 import { Link, useLocation } from 'react-router-dom';
 import LogoutButton from './LogoutButton';
 
-const drawerWidth = 125;
+const drawerWidth = 135;
 
 function Sidebar() {
   const location = useLocation();

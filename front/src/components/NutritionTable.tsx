@@ -16,9 +16,11 @@ interface DailyFoodItem {
 
 interface NutritionTableProps {
   foodData: DailyFoodItem[];
+  summation?: boolean;
+  mealName?: string;
 }
 
-const NutritionTable: React.FC<NutritionTableProps> = ({ foodData }) => {
+const NutritionTable: React.FC<NutritionTableProps> = ({ foodData, summation = false, mealName }) => {
   if (foodData.length === 0) {
     return (
       <Paper sx={{ p: 2, mb: 2, borderRadius: 5, width: '98%' }}>
@@ -31,20 +33,30 @@ const NutritionTable: React.FC<NutritionTableProps> = ({ foodData }) => {
     );
   }
 
-  const containsTotal = foodData.some(item => item.name.toLowerCase() === 'total');
+  let total = {
+    name: mealName || 'Total',
+    calories: 0,
+    carbs: 0,
+    fat: 0,
+    protein: 0,
+    sodium: 0,
+    sugar: 0
+  };
 
-  const total = foodData.reduce(
-    (acc, item) => {
-      acc.calories += item.calories;
-      acc.carbs += item.carbs;
-      acc.fat += item.fat;
-      acc.protein += item.protein;
-      acc.sodium += item.sodium;
-      acc.sugar += item.sugar;
-      return acc;
-    },
-    { calories: 0, carbs: 0, fat: 0, protein: 0, sodium: 0, sugar: 0 }
-  );
+  if (summation) {
+    total = foodData.reduce(
+      (acc, item) => {
+        acc.calories += item.calories;
+        acc.carbs += item.carbs;
+        acc.fat += item.fat;
+        acc.protein += item.protein;
+        acc.sodium += item.sodium;
+        acc.sugar += item.sugar;
+        return acc;
+      },
+      total
+    );
+  }
 
   return (
     <Paper sx={{ p: 2, mb: 2, borderRadius: 5, width: '98%' }}>
@@ -63,7 +75,7 @@ const NutritionTable: React.FC<NutritionTableProps> = ({ foodData }) => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {!containsTotal && foodData.map((item) => (
+            {!summation && foodData.map((item) => (
               <TableRow key={item.id}>
                 <TableCell>{item.name}</TableCell>
                 <TableCell align="right">{item.quantity}</TableCell>
@@ -75,16 +87,19 @@ const NutritionTable: React.FC<NutritionTableProps> = ({ foodData }) => {
                 <TableCell align="right">{Math.round(item.sugar)}g</TableCell>
               </TableRow>
             ))}
-            <TableRow>
-              <TableCell><Typography fontWeight="bold">Total</Typography></TableCell>
-              <TableCell align="right"></TableCell>
-              <TableCell align="right"><Typography fontWeight="bold">{Math.round(total.calories)} cal</Typography></TableCell>
-              <TableCell align="right"><Typography fontWeight="bold">{Math.round(total.carbs)}g</Typography></TableCell>
-              <TableCell align="right"><Typography fontWeight="bold">{Math.round(total.fat)}g</Typography></TableCell>
-              <TableCell align="right"><Typography fontWeight="bold">{Math.round(total.protein)}g</Typography></TableCell>
-              <TableCell align="right"><Typography fontWeight="bold">{Math.round(total.sodium)}mg</Typography></TableCell>
-              <TableCell align="right"><Typography fontWeight="bold">{Math.round(total.sugar)}g</Typography></TableCell>
-            </TableRow>
+
+            {summation && (
+              <TableRow>
+                <TableCell><Typography fontWeight="bold">{total.name}</Typography></TableCell>
+                <TableCell align="right"></TableCell>
+                <TableCell align="right"><Typography fontWeight="bold">{Math.round(total.calories)} cal</Typography></TableCell>
+                <TableCell align="right"><Typography fontWeight="bold">{Math.round(total.carbs)}g</Typography></TableCell>
+                <TableCell align="right"><Typography fontWeight="bold">{Math.round(total.fat)}g</Typography></TableCell>
+                <TableCell align="right"><Typography fontWeight="bold">{Math.round(total.protein)}g</Typography></TableCell>
+                <TableCell align="right"><Typography fontWeight="bold">{Math.round(total.sodium)}mg</Typography></TableCell>
+                <TableCell align="right"><Typography fontWeight="bold">{Math.round(total.sugar)}g</Typography></TableCell>
+              </TableRow>
+            )}
           </TableBody>
         </Table>
       </TableContainer>

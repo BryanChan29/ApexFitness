@@ -978,6 +978,119 @@ app.post('/api/daily_food', async (req: Request, res: Response) => {
   }
 });
 
+app.get('/api/daily_food/:id', async (req: Request, res: Response) => {
+  const user_id = await getUserIdFromCookies(req.cookies.token);
+  const dailyFoodId = parseInt(req.params.id, 10);
+
+  if (!user_id) {
+    return res.status(401).json({ error: 'Not authenticated' });
+  }
+
+  if (isNaN(dailyFoodId)) {
+    return res.status(400).json({ error: 'Invalid Daily Food ID' });
+  }
+
+  try {
+    const query = `
+      SELECT * FROM daily_food 
+      WHERE user_id = ? AND id = ?
+    `;
+    const result = await db.get(query, [user_id, dailyFoodId]);
+
+    if (!result) {
+      return res.status(404).json({ error: 'Daily food item not found' });
+    }
+
+    return res.json(result);
+  } catch (error) {
+    console.error('Error fetching daily food item:', error);
+    return res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
+app.post('/api/meals', async (req: Request, res: Response) => {
+  const user_id = await getUserIdFromCookies(req.cookies.token);
+  const { mealPlanName, foodItems } = req.body;
+
+  if (!mealPlanName || !foodItems || !Array.isArray(foodItems) || foodItems.length === 0) {
+    return res.status(400).json({ error: 'Meal name and food items are required' });
+  }
+
+  try {
+    const statement = await db.prepare(
+      'INSERT INTO meals (name, date, user_id) VALUES (?, ?, ?)'
+    );
+    const result = await statement.run(mealPlanName, new Date().toISOString(), user_id);
+    const meal_id = result.lastID;
+
+    for (const foodItem of foodItems) {
+      const food_id = foodItem.id;
+      const mealItemStatement = await db.prepare(
+        'INSERT INTO meal_items (meal_id, food_id) VALUES (?, ?)'
+      );
+      await mealItemStatement.run(meal_id, food_id);
+    }
+
+    return res.status(201).json({ message: 'Meal created successfully', meal_id });
+  } catch (error) {
+    console.error('Error creating meal:', error);
+    return res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
+app.get('/api/meals', async (req: Request, res: Response) => {
+  const user_id = await getUserIdFromCookies(req.cookies.token);
+
+  if (!user_id) {
+    return res.status(401).json({ error: 'Not authenticated' });
+  }
+
+  try {
+    const mealsQuery = `
+      SELECT m.id AS meal_id, m.name AS meal_name, m.date AS meal_date
+      FROM meals m
+      WHERE m.user_id = ?
+    `;
+    const meals = await db.all(mealsQuery, [user_id]);
+
+    if (meals.length === 0) {
+      return res.status(404).json({ error: 'No meals found for this user' });
+    }
+
+    const mealsWithItems = await Promise.all(
+      meals.map(async (meal) => {
+        const mealItemsQuery = `
+          SELECT df.id AS food_id, df.name AS food_name, df.calories, df.carbs, df.fat, df.protein, df.sodium, df.sugar, df.date, df.quantity
+          FROM daily_food df
+          INNER JOIN meal_items mi ON df.id = mi.food_id
+          WHERE mi.meal_id = ?
+        `;
+        const foodItems = await db.all(mealItemsQuery, [meal.meal_id]);
+
+        const transformedFoodItems = foodItems.map((foodItem) => ({
+          id: foodItem.food_id,
+          name: foodItem.food_name,
+          quantity: foodItem.quantity,
+          calories: foodItem.calories,
+          carbs: foodItem.carbs,
+          fat: foodItem.fat,
+          protein: foodItem.protein,
+          sodium: foodItem.sodium,
+          sugar: foodItem.sugar,
+          date: foodItem.date
+        }));
+
+        return { ...meal, food_items: transformedFoodItems };
+      })
+    );
+
+    return res.json({ meals: mealsWithItems });
+  } catch (error) {
+    console.error('Error fetching meals:', error);
+    return res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
 // run server
 let port = 3000;
 let host = 'localhost';

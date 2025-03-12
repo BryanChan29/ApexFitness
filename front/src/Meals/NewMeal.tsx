@@ -16,9 +16,59 @@ const NewMeal: React.FC = () => {
     setMealPlanName(event.target.value);
   };
 
-  const handleSaveMeal = () => {
-    console.log('Meal saved:', { mealPlanName, foodItems });
-  };
+  const handleSaveMeal = async () => {
+    try {
+      const loggedFoodIds: number[] = [];
+      for (const foodItem of foodItems) {
+        const response = await fetch('/api/daily_food', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            meal_type: 'MealItem',
+            name: foodItem.name,
+            quantity: foodItem.quantity,
+            calories: foodItem.calories,
+            carbs: foodItem.carbs,
+            fat: foodItem.fat,
+            protein: foodItem.protein,
+            sodium: foodItem.sodium,
+            sugar: foodItem.sugar,
+            date: new Date().toISOString(),
+          }),
+        });
+        const data = await response.json();
+        if (response.ok && data.id) {
+          loggedFoodIds.push(data.id);
+        } else {
+          throw new Error('Error logging food item');
+        }
+      }
+  
+      // After logging all food items, create the meal
+      const mealResponse = await fetch('/api/meals', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          mealPlanName,
+          foodItems: loggedFoodIds.map((id) => ({ id })),
+        }),
+      });
+  
+      const mealData = await mealResponse.json();
+      if (mealResponse.ok) {
+        console.log('Meal saved successfully:', mealData);
+        window.history.back();
+      } else {
+        throw new Error('Error creating meal');
+      }
+    } catch (error) {
+      console.error('Error saving meal:', error);
+    }
+  };  
 
   const isSaveDisabled = foodItems.length === 0 || mealPlanName.trim() === '';
 

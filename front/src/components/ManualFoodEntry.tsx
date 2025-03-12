@@ -23,11 +23,6 @@ const AddFoodPopup: React.FC<AddFoodPopupProps> = ({ isOpen, onClose, mealType }
   const [error, setError] = useState<string | null>(null);  // Error state
 
   const handleSubmit = async () => {
-    if (foodName.toLowerCase() === "total") {
-      setError("The food name 'total' is reserved and cannot be used.");
-      return;
-    }
-
     if (!foodName || !calories || !carbs || !fat || !protein || !sodium || !sugar || !quantity) {
       setError("All fields must be filled");
       return;

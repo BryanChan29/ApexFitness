@@ -61,9 +61,32 @@ const SearchResultsSchema = z.object({
   }).optional(),
 });
 
+const DailyFoodItemSchema = z.object({
+  id: z.number(),
+  name: z.string(),
+  quantity: z.string(),
+  calories: z.number(),
+  carbs: z.number(),
+  fat: z.number(),
+  protein: z.number(),
+  sodium: z.number(),
+  sugar: z.number(),
+  date: z.string(),
+});
+
+const MealSchema = z.object({
+  meal_id: z.number(),
+  meal_name: z.string(),
+  meal_date: z.string(),
+  food_items: z.array(DailyFoodItemSchema),
+});
+
+const MealsSchema = z.array(MealSchema);
+
 type SearchResults = z.infer<typeof SearchResultsSchema>;
 type FoodItem = z.infer<typeof FoodItemSchema>;
 type FoodDetail = z.infer<typeof FoodDetailSchema>;
+type Meal = z.infer<typeof MealSchema>;
 
 const LogFood = ({ onAddMealItem }: { onAddMealItem?: (foodItem: any) => void }) => {
   const [query, setQuery] = useState("");
@@ -83,6 +106,8 @@ const LogFood = ({ onAddMealItem }: { onAddMealItem?: (foodItem: any) => void })
   const mealType = searchParams.get('mealType');
   const [dayOfWeek, setDayOfWeek] = useState("Monday");
   const [mealPlanType, setMealPlanType] = useState("breakfast");
+  const [savedMeals, setSavedMeals] = useState<Meal[]>([]);
+  const [loadingSavedMeals, setLoadingSavedMeals] = useState(true);
 
   useEffect(() => {
     if (!mealType || !["breakfast", "lunch", "dinner", "snack", "new-meal", "new-meal-plan"].includes(mealType)) {
@@ -261,6 +286,41 @@ const LogFood = ({ onAddMealItem }: { onAddMealItem?: (foodItem: any) => void })
       setFullNutrition(updatedNutrition);
     }
   }, [numServings, servingSize, foodDetail]);
+
+  useEffect(() => {
+    const fetchSavedMeals = async () => {
+      try {
+        const response = await axios.get('/api/meals');
+    
+        if (response.data && Array.isArray(response.data.meals)) {
+          const parsedData = MealsSchema.safeParse(response.data.meals);
+    
+          if (parsedData.success) {
+            setSavedMeals(parsedData.data);
+          } else {
+            console.error('Invalid data:', parsedData.error.format());
+          }
+        } else {
+          console.error("The response does not contain a valid 'meals' array.");
+        }
+      } catch (error) {
+        console.error('Error fetching saved meals:', error);
+      } finally {
+        setLoadingSavedMeals(false);
+      }
+    };    
+  
+    fetchSavedMeals();
+  }, []);
+
+
+  if (loadingSavedMeals) {
+    return <div>Loading saved meals...</div>;
+  }
+
+  if (!savedMeals.length) {
+    return <div>No saved meals found.</div>;
+  }
 
   return (
     <Box
@@ -541,11 +601,15 @@ const LogFood = ({ onAddMealItem }: { onAddMealItem?: (foodItem: any) => void })
               Add a New Meal
             </Button>
           </Box>
-          <NutritionTable foodData={[]} />
+          {savedMeals.map((meal) => (
+            <Box key={meal.meal_id} sx={{ width: '100%', mb: 4 }}>
+              <NutritionTable foodData={meal.food_items} summation={true} mealName={meal.meal_name} />
+            </Box>
+          ))}
         </Box>
       )}
     </Box>
   );
-};
+}
 
 export default LogFood;

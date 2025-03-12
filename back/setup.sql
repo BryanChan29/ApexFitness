@@ -32,8 +32,10 @@ CREATE TABLE daily_food (
 -- Meals Table
 CREATE TABLE meals ( 
     id INTEGER PRIMARY KEY AUTOINCREMENT, 
-    date TEXT NOT NULL,  -- Use TEXT for dates in SQLite
-    saved_meal BOOLEAN NOT NULL DEFAULT 0
+    name VARCHAR(50) NOT NULL,
+    date TEXT NOT NULL,
+    user_id VARCHAR(50) NOT NULL,
+    FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 -- Meal Items Join Table (for list of food IDs in a meal)
