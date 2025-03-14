@@ -79,7 +79,8 @@ CREATE TABLE exercises (
     duration INTEGER, -- duration in minutes
     sets INTEGER,
     reps INTEGER,
-    weight INTEGER
+    weight INTEGER,
+    calories_burned, INTEGER
 );
 
 -- Workout Exercises Join Table (for list of exercise IDs in a workout)

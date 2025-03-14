@@ -15,6 +15,8 @@ import {
   TextField,
   Modal,
   FormControl,
+  Snackbar,
+  Alert,
 } from '@mui/material';
 import axios from 'axios';
 
@@ -36,8 +38,16 @@ interface StrengthWorkoutEntry {
 interface ApiCaloriesBurnedResponse {
   name: string;
   calories_per_hour: number;
-  duration_minutes?: number; //Add if they exist
-  total_calories?: number; //Add if they exist
+  duration_minutes?: number;
+  total_calories?: number;
+}
+
+interface Workout {
+  id: number;
+  name: string;
+  date: string;
+  exercises: CardioWorkoutEntry[] | StrengthWorkoutEntry[];
+  user_id: number;
 }
 
 const WorkoutPage: React.FC = () => {
@@ -52,7 +62,13 @@ const WorkoutPage: React.FC = () => {
   const [searchResults, setSearchResults] = useState<ApiCaloriesBurnedResponse[]>([]);
   const [openSearchResultsModal, setOpenSearchResultsModal] = useState(false);
   const [selectedSearchResult, setSelectedSearchResult] = useState<ApiCaloriesBurnedResponse | null>(null);
-
+  const [workoutName, setWorkoutName] = useState('');
+  const [openNameModal, setOpenNameModal] = useState(false);
+  const [isCardioSave, setIsCardioSave] = useState(false);
+  const [userWorkouts, setUserWorkouts] = useState<Workout[]>([]);
+  const [openUserWorkoutsModal, setOpenUserWorkoutsModal] = useState(false);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [openSnackbar, setOpenSnackbar] = useState(false);
 
   const handleOpenCardioModal = () => setOpenCardioModal(true);
   const handleCloseCardioModal = () => setOpenCardioModal(false);
@@ -60,6 +76,14 @@ const WorkoutPage: React.FC = () => {
   const handleCloseStrengthModal = () => setOpenStrengthModal(false);
   const handleOpenSearchResultsModal = () => setOpenSearchResultsModal(true);
   const handleCloseSearchResultsModal = () => setOpenSearchResultsModal(false);
+  const handleOpenNameModal = (isCardio: boolean) => {
+    setIsCardioSave(isCardio);
+    setOpenNameModal(true);
+  };
+  const handleCloseNameModal = () => setOpenNameModal(false);
+  const handleOpenUserWorkoutsModal = () => setOpenUserWorkoutsModal(true);
+  const handleCloseUserWorkoutsModal = () => setOpenUserWorkoutsModal(false);
+  
 
   const handleAddCardio = () => {
     if (selectedSearchResult) {
@@ -71,7 +95,7 @@ const WorkoutPage: React.FC = () => {
       setCardioData([...cardioData, { id: nextCardioId, ...updatedCardio }]);
       setNextCardioId(nextCardioId + 1);
       setNewCardio({ workoutType: '', duration: 0, caloriesBurned: 0 });
-      setSelectedSearchResult(null); // Reset selected result
+      setSelectedSearchResult(null);
       handleCloseCardioModal();
     } else {
       setCardioData([...cardioData, { id: nextCardioId, ...newCardio }]);
@@ -90,17 +114,13 @@ const WorkoutPage: React.FC = () => {
 
   const handleSearchWorkoutTypes = async () => {
     try {
-      console.log("handleSearchWorkoutType");
       const response = await axios.get('/api/calories-burned', {
         params: { activity: newCardio.workoutType },
       });
-      console.log(response.data);
-
       setSearchResults(response.data);
       handleOpenSearchResultsModal();
     } catch (error) {
       console.error('Error fetching workout types:', error);
-      // setSearchResults([{ name: 'Error fetching data', calories_per_hour: 0 }]);
       handleOpenSearchResultsModal();
     }
   };
@@ -112,35 +132,98 @@ const WorkoutPage: React.FC = () => {
     handleCloseSearchResultsModal();
   };
 
+  const handleCloseSnackbar = (event?: React.SyntheticEvent | Event, reason?: string) => {
+    if (reason === 'clickaway') {
+      return;
+    }
+    setOpenSnackbar(false);
+  };
+
   const handleSaveCardioWorkout = async () => {
     try {
       const response = await axios.post('/api/workouts', {
-        name: 'Cardio Workout', // You can customize the workout name
-        date: new Date().toISOString(), // Current date/time
-        exercises: cardioData, // Send cardioData as exercises
+        name: workoutName,
+        date: new Date().toISOString(),
+        exercises: cardioData,
       });
       console.log('Workout saved:', response.data);
-      // Optionally, clear the cardioData or show a success message
       setCardioData([]);
+      setWorkoutName('');
+      handleCloseNameModal();
+      setSuccessMessage('Cardio workout saved successfully!');
+      setOpenSnackbar(true);
     } catch (error) {
       console.error('Error saving workout:', error);
-      // Handle error (e.g., show an error message)
     }
   };
 
   const handleSaveStrengthWorkout = async () => {
     try {
       const response = await axios.post('/api/workouts', {
-        name: 'Strength Workout', // Customize workout name if needed
+        name: workoutName,
         date: new Date().toISOString(),
-        exercises: strengthData, // Send strengthData as exercises
+        exercises: strengthData,
       });
       console.log('Strength workout saved:', response.data);
-      // Optionally, clear strengthData or show a success message
       setStrengthData([]);
+      setWorkoutName('');
+      handleCloseNameModal();
+      setSuccessMessage('Strength workout saved successfully!');
+      setOpenSnackbar(true);
     } catch (error) {
       console.error('Error saving strength workout:', error);
-      // Handle error (e.g., show an error message)
+    }
+  };
+
+  const handleLoadUserWorkouts = async () => {
+    try {
+      const response = await axios.get('/api/workouts');
+      setUserWorkouts(response.data.workouts);
+      handleOpenUserWorkoutsModal();
+    } catch (error) {
+      console.error('Error loading user workouts:', error);
+    }
+  };
+
+  const handleSelectUserWorkout = async (workout: Workout) => {
+    try {
+      const response = await axios.get(`/api/workouts/${workout.id}/exercises`);
+      const exercises = response.data.exercises;
+
+      console.log('Exercises from API:', exercises); // Check the API response
+
+
+      // Clear existing data before populating
+      setCardioData([]);
+      setStrengthData([]);
+
+      // Populate cardioData and strengthData based on exercise types
+      exercises.forEach((exercise: any) => {
+        if (exercise.duration && exercise.calories_burned) {
+          setCardioData((prev) => [...prev, {
+            id: prev.length + 1,
+            workoutType: exercise.name_of_workout,
+            duration: exercise.duration,
+            caloriesBurned: exercise.calories_burned,
+          }]);
+          console.log('Cardio Data:', cardioData)
+
+        } else if (exercise.sets && exercise.reps && exercise.weight) {
+          setStrengthData((prev) => [...prev, {
+            id: prev.length + 1,
+            workoutType: exercise.name_of_workout,
+            sets: exercise.sets,
+            reps: exercise.reps,
+            weight: exercise.weight,
+          }]);
+        }
+      });
+
+      handleCloseUserWorkoutsModal();
+    } catch (error: any) {
+      console.error('Error loading workout exercises:', error);
+      console.error('API Response:', error.response); // Log the full error response
+
     }
   };
 
@@ -148,7 +231,6 @@ const WorkoutPage: React.FC = () => {
     <Modal open={openCardioModal} onClose={handleCloseCardioModal}>
       <Box sx={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: 400, bgcolor: 'background.paper', boxShadow: 24, p: 4 }}>
         <Typography variant="h6" gutterBottom>Add Cardio Workout</Typography>
-
         <TextField
           label="Workout Type"
           fullWidth
@@ -156,48 +238,45 @@ const WorkoutPage: React.FC = () => {
           value={newCardio.workoutType}
           onChange={(e) => setNewCardio({ ...newCardio, workoutType: e.target.value })}
         />
-
         <Button variant="contained" color="primary" onClick={handleSearchWorkoutTypes} sx={{ mt: 2 }}>
           Search Workout Types
         </Button>
-
         <TextField
           label="Duration (minutes)"
-          type="number" 
-          fullWidth 
-          margin="normal" 
-          value={newCardio.duration} 
-          onChange={(e) => setNewCardio({ ...newCardio, duration: Number(e.target.value) })} />
-        {/* <TextField label="Calories Burned" type="number" fullWidth margin="normal" value={newCardio.caloriesBurned} onChange={(e) => setNewCardio({ ...newCardio, caloriesBurned: Number(e.target.value) })} /> */}
+          type="number"
+          fullWidth
+          margin="normal"
+          value={newCardio.duration}
+          onChange={(e) => setNewCardio({ ...newCardio, duration: Number(e.target.value) })}
+        />
         <Button variant="contained" color="primary" onClick={handleAddCardio} sx={{ mt: 2 }}>Add</Button>
       </Box>
     </Modal>
   );
 
-const searchResultsModal = (
-  <Modal open={openSearchResultsModal} onClose={handleCloseSearchResultsModal}>
-    <Box sx={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: 400, bgcolor: 'background.paper', boxShadow: 24, p: 4 }}>
-      <Typography variant="h6" gutterBottom>Search Results</Typography>
-      {searchResults.map((result, index) => (
-        <Button
-          key={index}
-          fullWidth
-          sx={{ my: 1 }}
-          variant="outlined"
-          onClick={() => handleSelectSearchResult(result.name)} // Pass only the name
-        >
-          {result.name} {/* Render only the name */}
-        </Button>
-      ))}
-    </Box>
-  </Modal>
-);
+  const searchResultsModal = (
+    <Modal open={openSearchResultsModal} onClose={handleCloseSearchResultsModal}>
+      <Box sx={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: 400, bgcolor: 'background.paper', boxShadow: 24, p: 4 }}>
+        <Typography variant="h6" gutterBottom>Search Results</Typography>
+        {searchResults.map((result, index) => (
+          <Button
+            key={index}
+            fullWidth
+            sx={{ my: 1 }}
+            variant="outlined"
+            onClick={() => handleSelectSearchResult(result.name)}
+          >
+            {result.name}
+          </Button>
+        ))}
+      </Box>
+    </Modal>
+  );
 
   const strengthModal = (
     <Modal open={openStrengthModal} onClose={handleCloseStrengthModal}>
       <Box sx={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: 400, bgcolor: 'background.paper', boxShadow: 24, p: 4 }}>
         <Typography variant="h6" gutterBottom>Add Strength Workout</Typography>
-
         <FormControl fullWidth margin="normal">
           <TextField
             label="Workout Type"
@@ -207,11 +286,47 @@ const searchResultsModal = (
             onChange={(e) => setNewStrength({ ...newStrength, workoutType: e.target.value })}
           />
         </FormControl>
-
         <TextField label="Sets" type="number" fullWidth margin="normal" value={newStrength.sets} onChange={(e) => setNewStrength({ ...newStrength, sets: Number(e.target.value) })} />
         <TextField label="Reps" type="number" fullWidth margin="normal" value={newStrength.reps} onChange={(e) => setNewStrength({ ...newStrength, reps: Number(e.target.value) })} />
         <TextField label="Weight (lbs)" type="number" fullWidth margin="normal" value={newStrength.weight} onChange={(e) => setNewStrength({ ...newStrength, weight: Number(e.target.value) })} />
         <Button variant="contained" color="primary" onClick={handleAddStrength}>Add</Button>
+      </Box>
+    </Modal>
+  );
+
+  const nameModal = (
+    <Modal open={openNameModal} onClose={handleCloseNameModal}>
+      <Box sx={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: 400, bgcolor: 'background.paper', boxShadow: 24, p: 4 }}>
+        <Typography variant="h6" gutterBottom>Enter Workout Name</Typography>
+        <TextField
+          label="Workout Name"
+          fullWidth
+          margin="normal"
+          value={workoutName}
+          onChange={(e) => setWorkoutName(e.target.value)}
+        />
+        <Button variant="contained" color="primary" onClick={isCardioSave ? handleSaveCardioWorkout : handleSaveStrengthWorkout} sx={{ mt: 2 }}>
+          Save
+        </Button>
+      </Box>
+    </Modal>
+  );
+
+  const userWorkoutsModal = (
+    <Modal open={openUserWorkoutsModal} onClose={handleCloseUserWorkoutsModal}>
+      <Box sx={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: 400, bgcolor: 'background.paper', boxShadow: 24, p: 4 }}>
+        <Typography variant="h6" gutterBottom>Select Workout</Typography>
+        {userWorkouts.map((workout) => (
+          <Button
+            key={workout.id}
+            fullWidth
+            sx={{ my: 1 }}
+            variant="outlined"
+            onClick={() => handleSelectUserWorkout(workout)}
+          >
+            {workout.name}
+          </Button>
+        ))}
       </Box>
     </Modal>
   );
@@ -244,8 +359,11 @@ const searchResultsModal = (
             </TableContainer>
             <Box sx={{ mt: 2 }}>
               <Button variant="contained" className='primary-button' onClick={handleOpenCardioModal}>Add Cardio Workout</Button>
-              <Button variant="contained" onClick={handleSaveCardioWorkout} sx={{ ml: 2 }} className='primary-button'>
+              <Button variant="contained" onClick={() => handleOpenNameModal(true)} sx={{ ml: 2 }} className='primary-button'>
                 Save Cardio Workout
+              </Button>
+              <Button variant="contained" onClick={handleLoadUserWorkouts} sx={{ ml: 2 }} className='primary-button'>
+                Load Workouts
               </Button>
             </Box>
           </Paper>
@@ -254,6 +372,8 @@ const searchResultsModal = (
 
       {cardioModal}
       {searchResultsModal}
+      {nameModal}
+      {userWorkoutsModal}
 
       <Typography variant="h4" gutterBottom sx={{ mt: 4 }}>Strength Training Workouts</Typography>
       <Grid container spacing={3}>
@@ -282,11 +402,20 @@ const searchResultsModal = (
               </Table>
             </TableContainer>
             <Box sx={{ mt: 2 }}>
-              <Button variant="contained" color="primary" onClick={handleOpenStrengthModal} sx={{ ml: 2, mb: 2 }} className='primary-button'>Add Strength Workout</Button>
-            </Box>
-            <Button variant="contained" color="secondary" onClick={handleSaveStrengthWorkout} sx={{ ml: 2 }} className='primary-button'>
+            <Button variant="contained" color="primary" onClick={handleOpenStrengthModal} sx={{ ml: 2}} className='primary-button'>
+              Add Strength Workout</Button>
+            <Button variant="contained" color="secondary" onClick={() => handleOpenNameModal(false)} sx={{ ml: 2 }} className='primary-button'>
               Save Strength Workout
             </Button>
+            <Button
+                variant="contained"
+                onClick={handleLoadUserWorkouts} // load button added here.
+                sx={{ ml: 2 }}
+                className="primary-button"
+              >
+                Load Workouts
+              </Button>
+            </Box>
           </Paper>
         </Grid>
       </Grid>
@@ -317,7 +446,6 @@ const searchResultsModal = (
               Goal: 200 lbs
             </Typography>
 
-            {/* Button at bottom */}
             <Box sx={{ mt: 'auto' }}>
                 <Button variant="contained" color="primary" className="primary-button">
                 Log New Weight
@@ -325,6 +453,16 @@ const searchResultsModal = (
             </Box>
           </Paper>
         </Grid>
+        <Snackbar
+        open={openSnackbar}
+        autoHideDuration={6000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert onClose={handleCloseSnackbar} severity="success" sx={{ width: '100%' }}>
+          {successMessage}
+        </Alert>
+      </Snackbar>
     </Container>
   );
 };

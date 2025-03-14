@@ -120,3 +120,34 @@ INSERT INTO meal_plan_items (meal_plan_id, meal_id, day_of_week) VALUES (17, 216
 INSERT INTO meal_plan_items (meal_plan_id, meal_id, day_of_week) VALUES (18, 217, 'thursday');
 INSERT INTO meal_plan_items (meal_plan_id, meal_id, day_of_week) VALUES (19, 218, 'friday');
 INSERT INTO meal_plan_items (meal_plan_id, meal_id, day_of_week) VALUES (20, 219, 'saturday');
+
+-- Workouts Data
+INSERT INTO workouts (user_id, name, date) VALUES
+('user1', 'Morning Cardio', '2024-03-15'),
+('user1', 'Evening Strength', '2024-03-16'),
+('user2', 'Lunchtime Run', '2024-03-15'),
+('user2', 'Full Body Workout', '2024-03-17');
+
+-- Exercises Data
+INSERT INTO exercises (name_of_workout, muscle_worked, duration, sets, reps, weight, calories_burned) VALUES
+('Treadmill Run', 'Legs', 30, NULL, NULL, NULL, 300),
+('Cycling', 'Legs', 45, NULL, NULL, NULL, 450),
+('Bench Press', 'Chest', NULL, 3, 10, 150, NULL),
+('Squats', 'Legs', NULL, 4, 12, 180, NULL),
+('Bicep Curls', 'Arms', NULL, 3, 15, 50, NULL),
+('Shoulder Press', 'Shoulders', NULL, 3, 10, 80, NULL),
+('Outdoor Run', 'Legs', 20, NULL, NULL, NULL, 200),
+('Deadlifts', 'Back', NULL, 3, 8, 220, NULL);
+
+-- Workout Exercises Join Data
+INSERT INTO workout_exercises (workout_id, exercise_id) VALUES
+(1, 1), -- Morning Cardio: Treadmill Run
+(1, 2), -- Morning Cardio: Cycling
+(2, 3), -- Evening Strength: Bench Press
+(2, 4), -- Evening Strength: Squats
+(2, 5), -- Evening Strength: Bicep Curls
+(2, 6), -- Evening Strength: Shoulder Press
+(3, 7), -- Lunchtime Run: Outdoor Run
+(4, 4), -- Full Body Workout: Squats
+(4, 6), -- Full Body Workout: Shoulder Press
+(4, 8); -- Full Body Workout: Deadlifts
