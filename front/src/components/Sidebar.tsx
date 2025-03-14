@@ -28,7 +28,7 @@ function Sidebar() {
     { to: '/meals', icon: 'stockpot', label: 'Meal Plans' },
     { to: '/workouts', icon: 'exercise', label: 'Workouts' },
     { to: '/goals', icon: 'flag', label: 'My Goals' },
-    { to: '/meal-plan', icon: 'explore', label: 'Explore' },
+    { to: '/meal-plans', icon: 'explore', label: 'Explore' },
   ];
 
   return (

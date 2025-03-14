@@ -65,7 +65,7 @@ app.use(cookieParser());
 
 async function getUserIdFromCookies(
   token: string | undefined
-): Promise<number | null> {
+): Promise<string | null> {
   // ! NEED TO AWAIT WHEN CALLING THIS (returns a promise)
   // * Used for meal_plan when a user wants to query all of their meal_plans
   if (!token) {
@@ -379,6 +379,7 @@ app.post('/api/meal_plan', async (req, res) => {
 });
 
 app.put('/api/meal_plan', async (req, res) => {
+  // TODO: make it so that you verify the user and 403?
   const { id, name, isPrivate } = req.body;
 
   const validateRequest = () => {
@@ -427,25 +428,14 @@ app.put('/api/meal_plan', async (req, res) => {
   }
 });
 
-// requestRouter.get('/daily_food', async (req, res) => {
-//   // TODO: work on permissions, but for now just return everything in `daily_food` table
-//   let result: DBDailyFoodItem[];
-
-//   try {
-//     result = await db.all('SELECT * FROM daily_food');
-//     if (result.length === 0) {
-//       return res.status(404).json({ error: 'No meals found' });
-//     }
-//   } catch (err) {
-//     const error = err as object;
-//     return res.status(500).json({ error: error.toString() });
-//   }
-
-//   return res.json({ result });
-// });
-
 requestRouter.get('/meal_plan/:id', async (req, res) => {
-  let result: { day_of_week: string; daily_foods: string; name: string }[];
+  let result: {
+    day_of_week: string;
+    daily_foods: string;
+    name: string;
+    user_id: string;
+    is_private: number; // ? Sqlite stores booleans as bit values (I think?)
+  }[];
   const mealPlanId = parseInt(req.params.id, 10);
   if (isNaN(mealPlanId)) {
     return res.status(400).json({ error: 'Invalid Meal Plan ID' });
@@ -455,6 +445,8 @@ requestRouter.get('/meal_plan/:id', async (req, res) => {
     SELECT 
         mpi.day_of_week,
         mp.name,
+        df.user_id,
+        mp.is_private,
         json_group_array(
             json_object(
                 'name', df.name,
@@ -479,6 +471,12 @@ requestRouter.get('/meal_plan/:id', async (req, res) => {
   try {
     result = await db.all(query, [mealPlanId]);
 
+    const userId = await getUserIdFromCookies(req.cookies.token);
+
+    console.log(userId, result[0].user_id);
+    if (result[0].is_private === 1 && userId !== result[0].user_id) {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
     if (!result || result.length === 0) {
       return res.json({ name: '', result: {} });
     }
@@ -519,14 +517,16 @@ requestRouter.get('/meal_plan/:id', async (req, res) => {
 requestRouter.get('/user/meal_plan', async (req, res) => {
   const userId = await getUserIdFromCookies(req.cookies.token);
 
-  console.log(userId);
+  let returnArr: { meal_plan_id: number; is_private: boolean }[] = [];
 
   if (!userId) {
     return res.status(400).json({ error: 'Invalid User ID' });
   }
 
   const query = `
-    SELECT DISTINCT mp.id AS meal_plan_id
+    SELECT DISTINCT 
+      mp.id AS meal_plan_id,
+      mp.is_private
     FROM meal_plans mp
     JOIN meal_plan_items mpi ON mp.id = mpi.meal_plan_id
     JOIN meals m ON mpi.meal_id = m.id
@@ -539,12 +539,15 @@ requestRouter.get('/user/meal_plan', async (req, res) => {
     const result = await db.all(query, [userId]);
 
     if (!result || result.length === 0) {
-      return res.status(404).json({ error: 'No meal plans found' });
+      return res.json({ meal_plans: returnArr });
     }
     console.log('result', result);
-
+    returnArr = result.map((row) => ({
+      meal_plan_id: row.meal_plan_id,
+      is_private: row.is_private === 1, // Convert to boolean for clarity
+    }));
     return res.json({
-      meal_plan_ids: result.map((row) => row.meal_plan_id),
+      meal_plans: returnArr,
     });
   } catch (err: any) {
     console.error(err);
@@ -699,13 +702,16 @@ app.patch('/api/user/metrics', async (req: Request, res: Response) => {
 
   try {
     // Get the existing user record by email
-    const existingUser = await db.get('SELECT * FROM users WHERE email = ?', [userEmail]);
+    const existingUser = await db.get('SELECT * FROM users WHERE email = ?', [
+      userEmail,
+    ]);
     if (!existingUser) {
       return res.status(404).json({ error: 'User not found' });
     }
 
     // Extract only the body metrics from the request body
-    const { current_weight, goal_weight, height, age, activity_level } = req.body;
+    const { current_weight, goal_weight, height, age, activity_level } =
+      req.body;
 
     // Update the user record with new metrics, preserving fields that are not provided
     await db.run(
@@ -760,14 +766,15 @@ app.patch('/api/user/metrics', async (req: Request, res: Response) => {
     }
 
     // Retrieve and return the updated user record
-    const updatedUser = await db.get('SELECT * FROM users WHERE email = ?', [userEmail]);
+    const updatedUser = await db.get('SELECT * FROM users WHERE email = ?', [
+      userEmail,
+    ]);
     return res.status(200).json(updatedUser);
   } catch (error) {
     console.error('Error updating metrics:', error);
     return res.status(500).json({ error: 'Internal Server Error' });
   }
 });
-
 
 // Workouts Endpoints
 app.post('/api/workouts', async (req, res) => {
@@ -942,7 +949,9 @@ app.get('/api/daily_food', async (req: Request, res: Response) => {
   const { date, meal_type } = req.query;
 
   if (!user_id || !date || !meal_type) {
-    return res.status(400).json({ error: 'Date, and meal type are required inputs' });
+    return res
+      .status(400)
+      .json({ error: 'Date, and meal type are required inputs' });
   }
 
   try {
@@ -965,9 +974,28 @@ app.get('/api/daily_food', async (req: Request, res: Response) => {
 
 app.post('/api/daily_food', async (req: Request, res: Response) => {
   const user_id = await getUserIdFromCookies(req.cookies.token);
-  const { meal_type, name, quantity, calories, carbs, fat, protein, sodium, sugar, date } = req.body;
+  const {
+    meal_type,
+    name,
+    quantity,
+    calories,
+    carbs,
+    fat,
+    protein,
+    sodium,
+    sugar,
+    date,
+  } = req.body;
 
-  if (meal_type == null || name == null || calories == null || carbs == null || fat == null || protein == null || quantity == null) {
+  if (
+    meal_type == null ||
+    name == null ||
+    calories == null ||
+    carbs == null ||
+    fat == null ||
+    protein == null ||
+    quantity == null
+  ) {
     return res.status(400).json({ error: 'All fields are required' });
   }
 
@@ -975,9 +1003,24 @@ app.post('/api/daily_food', async (req: Request, res: Response) => {
     const statement = await db.prepare(
       'INSERT INTO daily_food (user_id, meal_type, name, quantity, calories, carbs, fat, protein, sodium, sugar, date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
     );
-    const result = await statement.run(user_id, meal_type, name, quantity, calories, carbs, fat, protein, sodium, sugar, date);
+    const result = await statement.run(
+      user_id,
+      meal_type,
+      name,
+      quantity,
+      calories,
+      carbs,
+      fat,
+      protein,
+      sodium,
+      sugar,
+      date
+    );
 
-    return res.status(201).json({ message: 'Daily food item added successfully', id: result.lastID });
+    return res.status(201).json({
+      message: 'Daily food item added successfully',
+      id: result.lastID,
+    });
   } catch (error) {
     console.error('Error inserting daily food item:', error);
     return res.status(500).json({ error: 'Internal Server Error' });

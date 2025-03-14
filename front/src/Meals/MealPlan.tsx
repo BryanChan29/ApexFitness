@@ -19,15 +19,49 @@ interface MealPlanProps {
   mealPlan: UIFormattedMealPlan;
   mealPlanName: string;
   isMealPublic: boolean;
+  mealPlanId: string;
+  showToggle?: boolean;
 }
 
-function MealPlan({ mealPlan, mealPlanName, isMealPublic }: MealPlanProps) {
+function MealPlan({
+  mealPlan,
+  mealPlanName,
+  isMealPublic,
+  mealPlanId,
+  // * Sets false as a default value; realistically, the only time this should be shown is when we show all of the user's meal plans
+  showToggle = false,
+}: MealPlanProps) {
   const [isPublic, setIsPublic] = useState<boolean>(isMealPublic);
 
   function handlePublicModifier(
     event: React.ChangeEvent<HTMLInputElement>
   ): void {
+    const isChecked = event.target.checked;
     setIsPublic(event.target.checked);
+
+    const payload = {
+      id: mealPlanId,
+      name: mealPlanName,
+      // ? We store as "isPrivate", but this is "isPublic"
+      isPrivate: !isChecked,
+    };
+    // Call the PUT endpoint
+    fetch('/api/meal_plan', {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error('Failed to update meal plan visibility');
+        }
+        return response.json();
+      })
+      .catch((error) => {
+        console.error('Error updating meal plan:', error);
+      });
   }
 
   const formatMealPlan = (mealPlan: UIFormattedMealPlan) => {
@@ -53,7 +87,8 @@ function MealPlan({ mealPlan, mealPlanName, isMealPublic }: MealPlanProps) {
   );
 
   function shareMealPlan(): void {
-    console.log('TODO: Not yet implemented');
+    const text = `${window.location.origin}/share/meal-plan/${mealPlanId}`;
+    navigator.clipboard.writeText(text);
   }
 
   return (
@@ -109,32 +144,26 @@ function MealPlan({ mealPlan, mealPlanName, isMealPublic }: MealPlanProps) {
             ))}
           </TableBody>
         </Table>
-        <div>
-          <Typography variant="h6">Public Visibility</Typography>
-          <Switch
-            checked={isPublic}
-            onChange={handlePublicModifier}
-            inputProps={{ 'aria-label': 'controlled' }}
-          />
-          {isPublic && (
-            <Button
-              variant="contained"
-              style={{ marginBottom: '10px', borderRadius: '25px' }}
-              onClick={shareMealPlan}
-            >
-              Copy Link
-            </Button>
-          )}
-        </div>
+        {showToggle && (
+          <div>
+            <Typography variant="h6">Public Visibility</Typography>
+            <Switch
+              checked={isPublic}
+              onChange={handlePublicModifier}
+              inputProps={{ 'aria-label': 'controlled' }}
+            />
+            {isPublic && (
+              <Button
+                variant="contained"
+                style={{ marginBottom: '10px', borderRadius: '25px' }}
+                onClick={shareMealPlan}
+              >
+                Copy Link
+              </Button>
+            )}
+          </div>
+        )}
       </TableContainer>
-      <Button
-        variant="contained"
-        color="primary"
-        style={{ marginTop: '20px'}}
-        className='primary-button'
-      >
-        Add New Meal Plan
-      </Button>
     </div>
   );
 }

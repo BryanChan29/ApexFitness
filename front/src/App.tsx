@@ -4,15 +4,11 @@ import {
   Route,
   Navigate,
 } from 'react-router-dom';
-import {
-  Box,
-  Toolbar,
-  CircularProgress,
-} from '@mui/material';
+import { Box, Toolbar, CircularProgress } from '@mui/material';
 import Sidebar from './components/Sidebar';
 import ProgressDashboard from './progresspage/Dashboard';
 import LogFood from './pages/LogFood';
-import NewMeal from './Meals/NewMeal'
+import NewMeal from './Meals/NewMeal';
 import LandingPage from './LandingPage/LandingPage';
 import { useAuth } from './LandingPage/authUtils';
 import WorkoutPage from './workouts/Workout';
@@ -22,7 +18,7 @@ import './App.css';
 import UserMealPlans from './Meals/UserMealPlan';
 import NewMealPlan from './Meals/NewMealPlan';
 import MealPlanSearch from './Meals/MealPlanSearch';
-
+import ShareMealPlan from './Meals/ShareMealPlan';
 
 function App() {
   const isAuthenticated = useAuth();
@@ -62,11 +58,12 @@ function App() {
               <Route path="/dashboard" element={<ProgressDashboard />} />
               <Route path="/meals" element={<UserMealPlans />} />
               <Route path="/workouts" element={<WorkoutPage />} />
-              <Route path="/goals" element={<Goals/>} />
+              <Route path="/goals" element={<Goals />} />
               <Route path="/new-meal-plan" element={<NewMealPlan />} />
               <Route path="/add-food" element={<LogFood />} />
               <Route path="/new-meal" element={<NewMeal />} />
               <Route path="/meal-plans" element={<MealPlanSearch />} />
+              <Route path="/share/meal-plan/:id" element={<ShareMealPlan />} />
 
               {/* Redirect to Dashboard if user is logged in */}
               <Route path="*" element={<Navigate to="/dashboard" />} />
