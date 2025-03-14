@@ -45,10 +45,10 @@ function UserMealPlans() {
                 withCredentials: true,
               })
               .then((res) => ({
-                id: plan.meal_plan_id, // Use correct ID
+                id: plan.meal_plan_id,
                 data: res.data.result as UIFormattedMealPlan,
                 name: res.data.name,
-                is_private: plan.is_private, // Include visibility for frontend
+                is_private: !plan.is_private,
               }))
               .catch((err) => {
                 console.error(
@@ -116,6 +116,7 @@ function UserMealPlans() {
             mealPlanName={mealPlan.name}
             isMealPublic={mealPlan.is_private}
             mealPlanId={mealPlan.id.toString()}
+            showToggle={true}
           />
         ))
       )}

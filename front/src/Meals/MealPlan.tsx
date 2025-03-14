@@ -20,6 +20,7 @@ interface MealPlanProps {
   mealPlanName: string;
   isMealPublic: boolean;
   mealPlanId: string;
+  showToggle?: boolean;
 }
 
 function MealPlan({
@@ -27,6 +28,8 @@ function MealPlan({
   mealPlanName,
   isMealPublic,
   mealPlanId,
+  // * Sets false as a default value; realistically, the only time this should be shown is when we show all of the user's meal plans
+  showToggle = false,
 }: MealPlanProps) {
   const [isPublic, setIsPublic] = useState<boolean>(isMealPublic);
 
@@ -141,23 +144,25 @@ function MealPlan({
             ))}
           </TableBody>
         </Table>
-        <div>
-          <Typography variant="h6">Public Visibility</Typography>
-          <Switch
-            checked={isPublic}
-            onChange={handlePublicModifier}
-            inputProps={{ 'aria-label': 'controlled' }}
-          />
-          {isPublic && (
-            <Button
-              variant="contained"
-              style={{ marginBottom: '10px', borderRadius: '25px' }}
-              onClick={shareMealPlan}
-            >
-              Copy Link
-            </Button>
-          )}
-        </div>
+        {showToggle && (
+          <div>
+            <Typography variant="h6">Public Visibility</Typography>
+            <Switch
+              checked={isPublic}
+              onChange={handlePublicModifier}
+              inputProps={{ 'aria-label': 'controlled' }}
+            />
+            {isPublic && (
+              <Button
+                variant="contained"
+                style={{ marginBottom: '10px', borderRadius: '25px' }}
+                onClick={shareMealPlan}
+              >
+                Copy Link
+              </Button>
+            )}
+          </div>
+        )}
       </TableContainer>
     </div>
   );

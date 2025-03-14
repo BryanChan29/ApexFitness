@@ -374,6 +374,7 @@ app.post('/api/meal_plan', async (req, res) => {
 });
 
 app.put('/api/meal_plan', async (req, res) => {
+  // TODO: make it so that you verify the user and 403?
   const { id, name, isPrivate } = req.body;
 
   const validateRequest = () => {

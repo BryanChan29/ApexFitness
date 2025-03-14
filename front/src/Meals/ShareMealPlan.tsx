@@ -68,6 +68,7 @@ function ShareMealPlan() {
         mealPlanName={mealPlanData.name}
         isMealPublic={true}
         mealPlanId={id || ''}
+        showToggle={false}
       />
 
       <Button
