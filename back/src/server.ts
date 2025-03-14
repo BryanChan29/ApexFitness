@@ -27,7 +27,6 @@ if (!process.env.FATSECRET_CLIENT_SECRET || !process.env.FATSECRET_CLIENT_ID) {
   );
 }
 const BURN_API_URL = 'https://api.api-ninjas.com/v1/caloriesburned';
-const BURN_API_KEY = '';
 
 let app = express();
 app.use(express.json());
@@ -790,7 +789,7 @@ app.post('/api/workouts', async (req, res) => {
         let exerciseResult;
         if (exercise.hasOwnProperty('caloriesBurned')) {
           exerciseStatement = await db.prepare(
-            'INSERT INTO exercises (name_of_workout, duration, calories_per_hour) VALUES (?, ?, ?)'
+            'INSERT INTO exercises (name_of_workout, duration, calories_burned) VALUES (?, ?, ?)'
           );
           exerciseResult = await exerciseStatement.run(
             exercise.workoutType,
@@ -912,6 +911,8 @@ app.get('/api/calories-burned', async (req: Request, res: Response) => {
     if (!activity) {
       return res.status(400).json({ error: 'Activity parameter is required' });
     }
+    const BURN_API_KEY = 'uR/rjN85aps/ttXyVXHMAQ==JXEOJPpYKy1Vq9j7';
+
 
     // Actual API call
     const api_url = `${BURN_API_URL}?activity=${encodeURIComponent(activity)}`;
