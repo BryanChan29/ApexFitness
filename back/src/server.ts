@@ -26,6 +26,12 @@ if (!process.env.FATSECRET_CLIENT_SECRET || !process.env.FATSECRET_CLIENT_ID) {
     'FATSECRET_CLIENT_ID and/or FATSECRET_CLIENT_SECRET is not defined in .env file'
   );
 }
+
+if (!process.env.BURN_API_KEY) {
+  throw new Error(
+    'BURN_API_KEY is not defined in .env file'
+  );
+}
 const BURN_API_URL = 'https://api.api-ninjas.com/v1/caloriesburned';
 
 let app = express();
@@ -911,14 +917,13 @@ app.get('/api/calories-burned', async (req: Request, res: Response) => {
     if (!activity) {
       return res.status(400).json({ error: 'Activity parameter is required' });
     }
-    const BURN_API_KEY = 'uR/rjN85aps/ttXyVXHMAQ==JXEOJPpYKy1Vq9j7';
 
 
     // Actual API call
     const api_url = `${BURN_API_URL}?activity=${encodeURIComponent(activity)}`;
 
     const response = await axios.get(api_url, {
-      headers: { 'X-Api-Key': BURN_API_KEY },
+      headers: { 'X-Api-Key': process.env.BURN_API_KEY },
     });
 
     if (response.status === 200) {
