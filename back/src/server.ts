@@ -774,8 +774,7 @@ app.patch('/api/user/metrics', async (req: Request, res: Response) => {
     }
 
     // Extract only the body metrics from the request body
-    const { current_weight, goal_weight, height, age, activity_level } =
-      req.body;
+    const { current_weight, goal_weight, height, age, gender, activity_level } = req.body;
 
     // Update the user record with new metrics, preserving fields that are not provided
     await db.run(
@@ -785,12 +784,14 @@ app.patch('/api/user/metrics', async (req: Request, res: Response) => {
          goal_weight = COALESCE(?, goal_weight),
          height = COALESCE(?, height),
          age = COALESCE(?, age),
+         gender = COALESCE(?, gender),
          activity_level = COALESCE(?, activity_level)
        WHERE email = ?`,
       current_weight,
       goal_weight,
       height,
       age,
+      gender,
       activity_level,
       userEmail
     );
@@ -836,6 +837,70 @@ app.patch('/api/user/metrics', async (req: Request, res: Response) => {
     return res.status(200).json(updatedUser);
   } catch (error) {
     console.error('Error updating metrics:', error);
+    return res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
+
+//WEIGHT HISTORY FOR PROGRESS
+// GET endpoint for retrieving user weight history
+app.get('/api/weight_history', async (req: Request, res: Response) => {
+  // Retrieve token from cookies (using token-based authentication)
+  const { token } = req.cookies;
+  if (!token || !tokenStorage[token]) {
+    return res.status(401).json({ error: 'Not authenticated' });
+  }
+
+  // Retrieve the user's email from tokenStorage
+  const userEmail = tokenStorage[token];
+
+  try {
+    // Get the user record by email to retrieve their user_id
+    const user = await db.get('SELECT * FROM users WHERE email = ?', [userEmail]);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Extract optional date range query parameters
+    const { start_date, end_date } = req.query;
+
+    // Build the SQL query to fetch weight history
+    let query = `
+      SELECT date_recorded, weight 
+      FROM user_weight_history 
+      WHERE user_id = ?
+    `;
+    const queryParams: any[] = [user.id];
+
+    // Add date range filters if provided
+    if (start_date || end_date) {
+      const conditions: string[] = [];
+      if (start_date) {
+        conditions.push('date(date_recorded) >= ?');
+        queryParams.push(start_date);
+      }
+      if (end_date) {
+        conditions.push('date(date_recorded) <= ?');
+        queryParams.push(end_date);
+      }
+      query += ` AND ${conditions.join(' AND ')}`;
+    }
+
+    // Order by date ascending
+    query += ' ORDER BY date_recorded ASC';
+
+    // Fetch weight history entries
+    const weightHistory = await db.all(query, queryParams);
+
+    // Format the response
+    const formattedHistory = weightHistory.map((entry: any) => ({
+      date: entry.date_recorded, // ISO format (e.g., "2024-03-13T12:00:00.000Z")
+      weight: entry.weight,
+    }));
+
+    return res.status(200).json(formattedHistory);
+  } catch (error) {
+    console.error('Error fetching weight history:', error);
     return res.status(500).json({ error: 'Internal Server Error' });
   }
 });
