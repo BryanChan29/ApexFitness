@@ -8,6 +8,7 @@ It will look like:
 ```
 FATSECRET_CLIENT_ID=your-key-here
 FATSECRET_CLIENT_SECRET=your-key-here
+BURN_API_KEY=your-key-here
 ```
 
 
