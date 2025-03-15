@@ -422,23 +422,6 @@ app.put('/api/meal_plan', async (req, res) => {
   }
 });
 
-// requestRouter.get('/daily_food', async (req, res) => {
-//   // TODO: work on permissions, but for now just return everything in `daily_food` table
-//   let result: DBDailyFoodItem[];
-
-//   try {
-//     result = await db.all('SELECT * FROM daily_food');
-//     if (result.length === 0) {
-//       return res.status(404).json({ error: 'No meals found' });
-//     }
-//   } catch (err) {
-//     const error = err as object;
-//     return res.status(500).json({ error: error.toString() });
-//   }
-
-//   return res.json({ result });
-// });
-
 requestRouter.get('/meal_plan/:id', async (req, res) => {
   let result: { day_of_week: string; daily_foods: string; name: string }[];
   const mealPlanId = parseInt(req.params.id, 10);
@@ -1090,6 +1073,51 @@ app.get('/api/meals', async (req: Request, res: Response) => {
     return res.status(500).json({ error: 'Internal Server Error' });
   }
 });
+
+app.post("/api/meal-plans", async (req, res) => {
+  const user_id = await getUserIdFromCookies(req.cookies.token);
+  const { name, is_private, meals } = req.body;
+  
+  if (!user_id || !name || !meals) {
+      return res.status(400).json({ error: "Missing required fields" });
+  }
+  
+  try {
+      // Insert meal plan
+      const result = await db.run(
+          "INSERT INTO meal_plans (name, is_private) VALUES (?, ?)",
+          [name, is_private ? 1 : 0]
+      );
+      const mealPlanId = result.lastID;
+      
+      for (const [day, mealTypes] of Object.entries(meals)) {
+          for (const foods of Object.values(mealTypes as { [key: string]: any })) {
+              for (const food of foods) {
+                  const foodResult = await db.run(
+                      `INSERT INTO daily_food (user_id, meal_type, name, quantity, calories, carbs, fat, protein, sodium, sugar, date)
+                       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, date('now'))`,
+                      [
+                          user_id, "meal-plan-item", food.name, food.quantity, food.calories,
+                          food.carbs, food.fat, food.protein, food.sodium, food.sugar
+                      ]
+                  );
+                  const foodId = foodResult.lastID;
+
+                  await db.run(
+                      "INSERT INTO meal_plan_items (meal_plan_id, food_id, day_of_week) VALUES (?, ?, ?)",
+                      [mealPlanId, foodId, day]
+                  );
+              }
+          }
+      }
+      
+      res.status(201).json({ message: "Meal plan created successfully", mealPlanId });
+  } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 
 // run server
 let port = 3000;
