@@ -684,6 +684,17 @@ const LogFood = ({ onAddMealItem }: { onAddMealItem?: (foodItem: any) => void })
         </Box>
       )}
 
+      <Typography
+        sx={{
+          type: "caption",
+          marginTop: "8px",
+          color: "gray",
+          textAlign: "left",
+        }}
+      >
+        All nutritional data provided by <a href="https://www.fatsecret.com" target="_blank" rel="noopener noreferrer">FatSecret</a>
+      </Typography>
+
       {mealType !== "new-meal" && mealType !== "new-meal-plan" && (
         <Box sx={{ mb: 4, mt: 4, width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
