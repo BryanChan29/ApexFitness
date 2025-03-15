@@ -90,6 +90,33 @@ function NewMealPlan() {
     });
   };
 
+  const handleSaveMealPlan = async () => {
+    const mealPlanData = {
+      name: mealPlanName,
+      is_private: !isPublic,
+      meals: mealPlan,
+    };
+
+    try {
+      const response = await fetch('/api/meal-plans', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(mealPlanData),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save meal plan');
+      }
+
+      const result = await response.json();
+      console.log('Meal Plan Saved:', result);
+    } catch (error) {
+      console.error('Error saving meal plan:', error);
+    }
+  };
+
   useEffect(() => {
     console.log('Updated Meal Plan:', mealPlan);
   }, [mealPlan]);
@@ -160,6 +187,17 @@ function NewMealPlan() {
           </TableBody>
         </Table>
       </TableContainer>
+
+      <Button
+        variant="contained"
+        className='primary-button'
+        onClick={() => {
+          handleSaveMealPlan();
+        }}
+        sx={{ marginTop: '20px' }}
+      >
+        Save Meal Plan
+      </Button>
 
       <div style={{ marginTop: '20px' }}>
         <Typography variant="h6">Public Visibility</Typography>
