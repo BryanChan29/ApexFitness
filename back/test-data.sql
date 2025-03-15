@@ -137,3 +137,16 @@ INSERT INTO meal_plan_items (meal_plan_id, meal_id, food_id, day_of_week) VALUES
 (18, 18, 117, 'thursday'),
 (19, 19, 118, 'friday'),
 (20, 20, 119, 'saturday');
+
+-- Goals test data
+INSERT INTO user_weight_history (user_id, date_recorded, weight, notes) VALUES ('user1', '2025-01-01', 241, 'Steady weight loss');
+INSERT INTO user_weight_history (user_id, date_recorded, weight, notes) VALUES ('user1', '2025-01-08', 233, 'Steady weight loss');
+INSERT INTO user_weight_history (user_id, date_recorded, weight, notes) VALUES ('user1', '2025-01-15', 224, 'Steady weight loss');
+INSERT INTO user_weight_history (user_id, date_recorded, weight, notes) VALUES ('user1', '2025-01-22', 217, 'Steady weight loss');
+INSERT INTO user_weight_history (user_id, date_recorded, weight, notes) VALUES ('user1', '2025-01-29', 210, 'Steady weight loss');
+INSERT INTO user_weight_history (user_id, date_recorded, weight, notes) VALUES ('user1', '2025-02-05', 203, 'Steady weight loss');
+INSERT INTO user_weight_history (user_id, date_recorded, weight, notes) VALUES ('user1', '2025-02-12', 193, 'Steady weight loss');
+INSERT INTO user_weight_history (user_id, date_recorded, weight, notes) VALUES ('user1', '2025-02-19', 183, 'Minor fluctuation');
+INSERT INTO user_weight_history (user_id, date_recorded, weight, notes) VALUES ('user1', '2025-02-26', 175, 'Minor fluctuation');
+INSERT INTO user_weight_history (user_id, date_recorded, weight, notes) VALUES ('user1', '2025-03-05', 167, 'Minor fluctuation');
+
