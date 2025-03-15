@@ -492,6 +492,7 @@ const LogFood = ({ onAddMealItem }: { onAddMealItem?: (foodItem: any) => void })
               boxShadow: "0px 4px 12px rgba(0, 0, 0, 0.1)",
               overflowY: "auto",
               maxHeight: "400px",
+              flexDirection: "column",
             }}
           >
             {results.foods?.food?.map((result, index) => (
@@ -683,6 +684,17 @@ const LogFood = ({ onAddMealItem }: { onAddMealItem?: (foodItem: any) => void })
           </Box>
         </Box>
       )}
+
+      <Typography
+        sx={{
+          type: "caption",
+          marginTop: "8px",
+          color: "gray",
+          textAlign: "left",
+        }}
+      >
+        All nutritional data provided by <a href="https://www.fatsecret.com" target="_blank" rel="noopener noreferrer">FatSecret</a>
+      </Typography>
 
       {mealType !== "new-meal" && mealType !== "new-meal-plan" && (
         <Box sx={{ mb: 4, mt: 4, width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
