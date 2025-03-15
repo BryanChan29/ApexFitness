@@ -104,6 +104,7 @@ const LogFood = ({ onAddMealItem }: { onAddMealItem?: (foodItem: any) => void })
   const searchParams = new URLSearchParams(location.search);
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const mealType = searchParams.get('mealType');
+  const date = searchParams.get('date');
   const [dayOfWeek, setDayOfWeek] = useState("Monday");
   const [mealPlanType, setMealPlanType] = useState("breakfast");
   const [savedMeals, setSavedMeals] = useState<Meal[]>([]);
@@ -226,7 +227,7 @@ const LogFood = ({ onAddMealItem }: { onAddMealItem?: (foodItem: any) => void })
         protein: Math.round(fullNutrition.protein),
         sodium: Math.round(fullNutrition.sodium),
         sugar: Math.round(fullNutrition.sugar),
-        date: new Date().toLocaleDateString('en-CA'),
+        date: date || new Date().toLocaleDateString('en-CA'),
         quantity: `${numServings} x ${fullNutrition.serving_description}`,
       });
 
@@ -288,7 +289,7 @@ const LogFood = ({ onAddMealItem }: { onAddMealItem?: (foodItem: any) => void })
     const payload = {
       meal_type: mealType,
       name: meal.meal_name,
-      date: new Date().toISOString().split('T')[0],
+      date: date || new Date().toISOString().split('T')[0],
       quantity: "1 serving",
       ...summedValues,
     };

@@ -30,7 +30,6 @@ const ProgressDashboard: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState<Date | null>(new Date()); 
 
   useEffect(() => {
-    // Fetch daily food data
     const fetchDailyFood = async () => {
       try {
         if (!selectedDate) return;
@@ -85,7 +84,7 @@ const ProgressDashboard: React.FC = () => {
             <Typography variant="h3" sx={{ fontWeight: 'bold' }}>
               Breakfast
             </Typography>
-            <Link to="/add-food?mealType=breakfast">
+            <Link to={`/add-food?mealType=breakfast&date=${selectedDate ? format(selectedDate, 'yyyy-MM-dd') : ''}`}>
               <Button variant="contained" className="primary-button">
                 Add Breakfast
               </Button>
