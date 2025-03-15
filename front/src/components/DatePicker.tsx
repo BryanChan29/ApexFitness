@@ -5,14 +5,14 @@ import "react-datepicker/dist/react-datepicker.css";
 import { format, addDays, subDays } from "date-fns";
 
 interface CustomDatePickerProps {
-  selectedDate: Date;
-  setSelectedDate: (date: Date) => void;
+  selectedDate: Date | null;
+  setSelectedDate: (date: Date | null) => void;
 }
 
 const CustomDatePicker: React.FC<CustomDatePickerProps> = ({ selectedDate, setSelectedDate }) => {
-  const handlePrevDay = () => setSelectedDate(subDays(selectedDate, 1));
+  const handlePrevDay = () => setSelectedDate(subDays(selectedDate!, 1));
   const handleNextDay = () => {
-    const nextDay = addDays(selectedDate, 1);
+    const nextDay = addDays(selectedDate!, 1);
     if (nextDay <= new Date()) {
       setSelectedDate(nextDay);
     }
@@ -52,7 +52,7 @@ const CustomDatePicker: React.FC<CustomDatePickerProps> = ({ selectedDate, setSe
             }}
           >
             <Typography variant="body1">
-              {format(selectedDate, "EEE, MMM d, yyyy")}
+              {selectedDate ? format(selectedDate, "EEE, MMM d, yyyy") : "Select Date"}
             </Typography>
             <IconButton size="small">
               <span className="material-symbols-rounded" style={{ color: "#757575", marginLeft: "4px" }}>

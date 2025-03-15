@@ -134,7 +134,7 @@ const LandingPage: React.FC = () => {
           sx={{
             backgroundColor: 'white',
             borderRadius: 10,
-            padding: 5,
+            padding: 8,
             width: '50%',
             height: '50%',
             textAlign: 'left',
@@ -166,17 +166,15 @@ const LandingPage: React.FC = () => {
           </Button>
         </Box>
 
-        {/* Right Section - Graphs Container with Image */}
         <Box
           sx={{
             backgroundColor: 'white',
             borderRadius: 10,
-            padding: 5,
+            padding: 8,
             boxShadow: 3,
             width: '50%',
             height: '50%',
             display: 'flex',
-            gap: 3,
             alignItems: 'center',
             mt: 15,
           }}

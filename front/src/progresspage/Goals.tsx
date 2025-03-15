@@ -9,15 +9,20 @@ import {
   CircularProgress,
 } from '@mui/material';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
-import { useTheme } from '@mui/material/styles';
 import axios from 'axios';
 import EditableWeightCircle from './EditableWeightCircle';
 import EditableStatCard from './EditableStatCard';
+import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title as ChartTitle, Tooltip as ChartTooltip, Legend } from 'chart.js';
+import { format } from 'date-fns';
+import { Line } from 'react-chartjs-2';
 import {
   calculateCalorieMetrics,
   CalorieResults,
   GoalType
 } from '../utils/CalorieCalculations';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
+import { DatePicker } from '@mui/x-date-pickers';
 
 
 interface WeightMetrics {
@@ -26,11 +31,16 @@ interface WeightMetrics {
   height: number | null;
   age: number | null;
   activity_level: string | null;
-  gender: 'male' | 'female' | null; 
+  gender: 'male' | 'female' | null;
+}
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, ChartTitle, ChartTooltip, Legend);
+
+interface ProgressEntry {
+  date: string;
+  weight: number;
 }
 
 const WeightMetricsUI: React.FC = () => {
-  const theme = useTheme();
 
   const [metrics, setMetrics] = useState<WeightMetrics>({
     current_weight: null,
@@ -50,8 +60,36 @@ const WeightMetricsUI: React.FC = () => {
 
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>('');
+  const [progressData, setProgressData] = useState<ProgressEntry[]>([]);
+  const [startDate, setStartDate] = useState<Date | null>(null);
+  const [endDate, setEndDate] = useState<Date | null>(null);
 
   useEffect(() => {
+    const fetchWeightHistory = async () => {
+      try {
+        const params: any = {};
+        if (startDate) {
+          params.start_date = format(startDate, 'yyyy-MM-dd');
+        }
+        if (endDate) {
+          params.end_date = format(endDate, 'yyyy-MM-dd');
+        }
+
+        const response = await axios.get('/api/weight_history', {
+          params,
+          withCredentials: true,
+        });
+        const weightData: ProgressEntry[] = response.data.map((entry: any) => ({
+          date: format(new Date(entry.date), 'MMM'), // Format as short month (e.g., 'May')
+          weight: entry.weight,
+        }));
+        setProgressData(weightData);
+      } catch (error) {
+        console.error('Error fetching weight history:', error);
+        setProgressData([]);
+      }
+    };
+
     async function fetchMetrics() {
       try {
         const response = await axios.get('/api/user', { withCredentials: true });
@@ -71,8 +109,9 @@ const WeightMetricsUI: React.FC = () => {
         setLoading(false);
       }
     }
+    fetchWeightHistory();
     fetchMetrics();
-  }, []);
+  }, [startDate, endDate]);
 
   useEffect(() => {
     const { current_weight, goal_weight, height, age, activity_level, gender } = metrics;
@@ -124,17 +163,10 @@ const WeightMetricsUI: React.FC = () => {
 
   const handleSave = async () => {
     try {
-      const payload = {...metrics
-        // current_weight: metrics.current_weight,
-        // goal_weight: metrics.goal_weight,
-        // height: metrics.height,
-        // age: metrics.age,
-        // activity_level: metrics.activity_level,
-      };
-      const response = await axios.patch('/api/user/metrics', payload, { withCredentials: true,});
+      const payload = { ...metrics };
+      const response = await axios.patch('/api/user/metrics', payload, { withCredentials: true, });
       if (response.status === 200) {
         console.log('Metrics updated successfully!', response.data);
-        // navigate('/dashboard');
       } else {
         console.error('Failed to update metrics.');
       }
@@ -142,7 +174,7 @@ const WeightMetricsUI: React.FC = () => {
       console.error('Error updating metrics:', err);
     }
   };
-  
+
 
   if (loading) {
     return (
@@ -174,87 +206,99 @@ const WeightMetricsUI: React.FC = () => {
     );
   }
 
+  const chartData = {
+    labels: progressData.map((entry) => entry.date),
+    datasets: [
+      {
+        label: 'Weight (lbs)',
+        data: progressData.map((entry) => entry.weight),
+        borderColor: '#3f51b5',
+        backgroundColor: 'rgba(63, 81, 181, 0.1)',
+        tension: 0.3,
+        fill: true,
+      },
+    ],
+  };
+
   return (
-    <Box
-    sx={{
-      display: 'flex', // Enables flexbox
-      justifyContent: 'center', // Center main metrics container
-      alignItems: 'flex-start', // Align to the top
-      gap: 1, // Spacing between columns
-      minHeight: '100vh',
-      py: 5,
-    }}
-  >
-    {/* Left Column: Calorie Info */}
-    {calorieResults.dailyIntake !== null && (
-      <Paper
-        elevation={2}
+    <Box sx={{ width: '100%' }}>
+      <Box
         sx={{
-          p: 3,
-          maxWidth: 300, // Adjust width as needed
-          textAlign: 'center',
-          borderRadius: 2,
-          mx: 'auto',
-          // flexGrow: 1,
-          // ml: -2,
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          gap: 2,
+          width: '100%',
+          margin: 'auto',
         }}
       >
-        <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
-          Calorie Plan
-          <Tooltip
+        {/* Left Column: Calorie Info */}
+        {calorieResults.dailyIntake !== null && (
+          <Paper
+            elevation={2}
+            sx={{
+              p: 3,
+              width: '48%',
+              textAlign: 'center',
+              borderRadius: 10,
+              minHeight: 500,
+            }}
+          >
+            <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+              Calorie Plan
+              <Tooltip
                 title={
                   getGoalType() === 'lose'
                     ? 'This plan calculates your daily calorie needs for weight loss based on your BMR, TDEE, and a 500-calorie deficit.'
                     : getGoalType() === 'gain'
-                    ? 'This plan calculates your daily calorie needs for muscle gain based on your BMR, TDEE, and a 250-calorie surplus.'
-                    : 'This plan calculates your daily calorie needs to maintain your current weight based on your BMR and TDEE.'
+                      ? 'This plan calculates your daily calorie needs for muscle gain based on your BMR, TDEE, and a 250-calorie surplus.'
+                      : 'This plan calculates your daily calorie needs to maintain your current weight based on your BMR and TDEE.'
                 }
-                
               >
                 <IconButton size="small" sx={{ ml: 0.5 }}>
                   <InfoOutlinedIcon fontSize="small" />
                 </IconButton>
               </Tooltip>
-        </Typography>
-        <Typography>BMR: {calorieResults.bmr?.toFixed(0)} calories
-          <Tooltip title="Basal Metabolic Rate: The number of calories your body burns at rest.">
-            <IconButton size="small" sx={{ ml: 0.5 }}>
-              <InfoOutlinedIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
-        </Typography>
-        <Typography>
-          TDEE: {calorieResults.tdee?.toFixed(0)} calories
-          <Tooltip title="Total Daily Energy Expenditure: Your BMR adjusted for your activity level.">
-            <IconButton size="small" sx={{ ml: 0.5 }}>
-              <InfoOutlinedIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
-        </Typography>
-        <Typography>
-        Daily Intake: {calorieResults.dailyIntake.toFixed(0)} calories{' '}
-            {getGoalType() !== 'maintain' && (
-              <>
-                ({getGoalType() === 'gain' ? '250-calorie surplus' : '500-calorie deficit'})
-              </>
-            )}
-            <Tooltip
-              title={
-                getGoalType() === 'lose'
-                  ? 'Recommended daily calorie intake to achieve a 500-calorie deficit for weight loss.'
-                  : getGoalType() === 'gain'
-                  ? 'Recommended daily calorie intake to achieve a 250-calorie surplus for muscle gain.'
-                  : 'Recommended daily calorie intake to maintain your current weight.'
-              }
-        
-            >
-              <IconButton size="small" sx={{ ml: 0.5 }}>
-                <InfoOutlinedIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
-        </Typography>
-        <Typography>
-        Days to Goal: {calorieResults.daysToGoal?.toFixed(0)}
+            </Typography>
+            <Typography>BMR: {calorieResults.bmr?.toFixed(0)} calories
+              <Tooltip title="Basal Metabolic Rate: The number of calories your body burns at rest.">
+                <IconButton size="small" sx={{ ml: 0.5 }}>
+                  <InfoOutlinedIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            </Typography>
+            <Typography>
+              TDEE: {calorieResults.tdee?.toFixed(0)} calories
+              <Tooltip title="Total Daily Energy Expenditure: Your BMR adjusted for your activity level.">
+                <IconButton size="small" sx={{ ml: 0.5 }}>
+                  <InfoOutlinedIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            </Typography>
+            <Typography>
+              Daily Intake: {calorieResults.dailyIntake.toFixed(0)} calories{' '}
+              {getGoalType() !== 'maintain' && (
+                <>
+                  ({getGoalType() === 'gain' ? '250-calorie surplus' : '500-calorie deficit'})
+                </>
+              )}
+              <Tooltip
+                title={
+                  getGoalType() === 'lose'
+                    ? 'Recommended daily calorie intake to achieve a 500-calorie deficit for weight loss.'
+                    : getGoalType() === 'gain'
+                      ? 'Recommended daily calorie intake to achieve a 250-calorie surplus for muscle gain.'
+                      : 'Recommended daily calorie intake to maintain your current weight.'
+                }
+
+              >
+                <IconButton size="small" sx={{ ml: 0.5 }}>
+                  <InfoOutlinedIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            </Typography>
+            <Typography>
+              Days to Goal: {calorieResults.daysToGoal?.toFixed(0)}
               {getGoalType() === 'gain' && (
                 <Typography variant="caption" color="textSecondary" sx={{ ml: 1 }}>
                   (Note: Realistic muscle gain may take longer, typically 1-2 lbs/month.)
@@ -271,150 +315,193 @@ const WeightMetricsUI: React.FC = () => {
                   <InfoOutlinedIcon fontSize="small" />
                 </IconButton>
               </Tooltip>
-        {/* Days to Goal: {calorieResults.daysToGoal?.toFixed(0)} */}
-        </Typography>
-      </Paper>
-    )}
-    
-      <Paper
-        elevation={4}
-        sx={{
-          p: 4,
-          maxWidth: 700,
-          mx: 'auto',
-          textAlign: 'center',
-          borderRadius: 5,
-        }}
-      >
-        <Typography variant="h4" sx={{ mb: 3, fontWeight: 'bold' }}>
-          My Metrics
-        </Typography>
-
-        {/* Circles Row */}
-        <Box
-          sx={{
-            display: 'flex',
-            flexWrap: 'wrap',
-            justifyContent: 'center',
-            alignItems: 'flex-start',
-            gap: 8,
-            mb: 3,
-          }}
-        >
-          {/* Current Weight */}
-          <Box sx={{ textAlign: 'center' }}>
-            <Typography
-              variant="subtitle1"
-              sx={{ mb: 1, fontWeight: 'bold', textTransform: 'uppercase' }}
-            >
-              Current
+              {/* Days to Goal: {calorieResults.daysToGoal?.toFixed(0)} */}
             </Typography>
-            <EditableWeightCircle
-              weight={metrics.current_weight}
-              // color={theme.palette.primary.main}
-              color="#ff0000"
-              onChange={handleCurrentWeightChange}
-            />
-          </Box>
-
-          {/* Goal Weight */}
-          <Box sx={{ textAlign: 'center' }}>
-            <Typography
-              variant="subtitle1"
-              sx={{ mb: 1, fontWeight: 'bold', textTransform: 'uppercase' }}
-            >
-              Goal
-            </Typography>
-            <EditableWeightCircle
-              weight={metrics.goal_weight}
-              // color={theme.palette.secondary.main}
-              color="#0BDA51"
-              onChange={handleGoalWeightChange}
-            />
-          </Box>
-        </Box>
-
-        <Box
-          sx={{
-            display: 'flex',
-            justifyContent: 'center',
-            flexWrap: 'wrap',
-            gap: 2,
-            mb: 3,
-          }}
-        >
-
-          {/* Height */}
-          <EditableStatCard
-            label="Height"
-            value={metrics.height !== null ? metrics.height : ''}
-            type="number"
-            onChange={(val) => {
-              setMetrics((prev) => ({
-                ...prev,
-                height: typeof val === 'number' ? val : null,
-              }));
-            }}            
-          />
-
-          {/* Age */}
-          <EditableStatCard
-            label="Age"
-            value={metrics.age !== null ? metrics.age : ''}
-            type="number"
-            onChange={(val) => {
-              setMetrics((prev) => ({
-                ...prev,
-                age: typeof val === 'number' ? val : null,
-              }));
-            }}
-          />
-
-          {/* Activity Level */}
-          <EditableStatCard
-            label="Activity"
-            value={metrics.activity_level || ''}
-            type="select"
-            selectOptions={['sedentary', 'light', 'moderate', 'active', 'very active']}
-            onChange={(val) => {
-              setMetrics((prev) => ({
-                ...prev,
-                activity_level: typeof val === 'string' ? val : null,
-              }));
-            }}
-          />
-          <EditableStatCard
-            label="Gender"
-            value={metrics.gender || ''}
-            type="select"
-            selectOptions={['male', 'female']}
-            onChange={(val) => setMetrics((prev) => ({ ...prev, gender: typeof val === 'string' ? (val as 'male' | 'female') : null }))}
-          />
-        
-        </Box>
-
-        
-
-        {weightDifference !== null && (
-          <Typography variant="h3" sx={{ fontWeight: 'bold', mb: 3 }}>
-            {getGoalType() === 'maintain'
-              ? 'Maintaining your current weight!'
-              : `${weightDifference.toFixed(1)} pounds to ${getGoalType() === 'gain' ? 'gain' : 'lose'}!`}
-          </Typography>
+          </Paper>
         )}
 
-
-        {/* Save Button */}
-        <Button
-          variant="contained"
-          size="large"
-          sx={{ px: 4, py: 1.5, fontWeight: 'bold' }}
-          onClick={handleSave}
-          className='primary-button'
+        <Paper
+          elevation={4}
+          sx={{
+            p: 4,
+            width: '48%', // Adjust width to fit side by side
+            textAlign: 'center',
+            borderRadius: 15,
+          }}
         >
-          Save Metrics
-        </Button>
-      </Paper>
+          <Typography variant="h4" sx={{ mb: 3, fontWeight: 'bold' }}>
+            My Metrics
+          </Typography>
+
+          {/* Circles Row */}
+          <Box
+            sx={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              justifyContent: 'center',
+              alignItems: 'flex-start',
+              gap: 8,
+              mb: 3,
+            }}
+          >
+            {/* Current Weight */}
+            <Box sx={{ textAlign: 'center' }}>
+              <Typography
+                variant="subtitle1"
+                sx={{ mb: 1, fontWeight: 'bold', textTransform: 'uppercase' }}
+              >
+                Current
+              </Typography>
+              <EditableWeightCircle
+                weight={metrics.current_weight}
+                color="#ff0000"
+                onChange={handleCurrentWeightChange}
+              />
+            </Box>
+
+            {/* Goal Weight */}
+            <Box sx={{ textAlign: 'center' }}>
+              <Typography
+                variant="subtitle1"
+                sx={{ mb: 1, fontWeight: 'bold', textTransform: 'uppercase' }}
+              >
+                Goal
+              </Typography>
+              <EditableWeightCircle
+                weight={metrics.goal_weight}
+                color="#0BDA51"
+                onChange={handleGoalWeightChange}
+              />
+            </Box>
+          </Box>
+
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'center',
+              flexWrap: 'wrap',
+              gap: 2,
+              mb: 3,
+            }}
+          >
+            {/* Height */}
+            <EditableStatCard
+              label="Height"
+              value={metrics.height !== null ? metrics.height : ''}
+              type="number"
+              onChange={(val) => {
+                setMetrics((prev) => ({
+                  ...prev,
+                  height: typeof val === 'number' ? val : null,
+                }));
+              }}
+            />
+
+            {/* Age */}
+            <EditableStatCard
+              label="Age"
+              value={metrics.age !== null ? metrics.age : ''}
+              type="number"
+              onChange={(val) => {
+                setMetrics((prev) => ({
+                  ...prev,
+                  age: typeof val === 'number' ? val : null,
+                }));
+              }}
+            />
+
+            {/* Activity Level */}
+            <EditableStatCard
+              label="Activity"
+              value={metrics.activity_level || ''}
+              type="select"
+              selectOptions={['sedentary', 'light', 'moderate', 'active', 'very active']}
+              onChange={(val) => {
+                setMetrics((prev) => ({
+                  ...prev,
+                  activity_level: typeof val === 'string' ? val : null,
+                }));
+              }}
+            />
+            <EditableStatCard
+              label="Gender"
+              value={metrics.gender || ''}
+              type="select"
+              selectOptions={['male', 'female']}
+              onChange={(val) => setMetrics((prev) => ({ ...prev, gender: typeof val === 'string' ? (val as 'male' | 'female') : null }))}
+            />
+
+          </Box>
+
+
+
+          {weightDifference !== null && (
+            <Typography variant="h3" sx={{ fontWeight: 'bold', mb: 3 }}>
+              {getGoalType() === 'maintain'
+                ? 'Maintaining your current weight!'
+                : `${weightDifference.toFixed(1)} pounds to ${getGoalType() === 'gain' ? 'gain' : 'lose'}!`}
+            </Typography>
+          )}
+
+          {/* Save Button */}
+          <Button
+            variant="contained"
+            size="large"
+            sx={{ px: 4, py: 1.5, fontWeight: 'bold' }}
+            onClick={handleSave}
+            className='primary-button'
+          >
+            Save Metrics
+          </Button>
+        </Paper>
+      </Box>
+      <Box sx={{ mt: 4, mb: 2, display: 'flex', gap: 2, justifyContent: 'center' }}>
+        <LocalizationProvider dateAdapter={AdapterDateFns}>
+          <DatePicker
+            label="Start Date"
+            value={startDate}
+            onChange={(newValue: Date | null) => setStartDate(newValue)}
+          />
+          <DatePicker
+            label="End Date"
+            value={endDate}
+            onChange={(newValue: Date | null) => setEndDate(newValue)}
+          />
+        </LocalizationProvider>
+      </Box>
+
+      {/* Weight Progress Card */}
+      <Box display="flex" justifyContent="center" sx={{ mb: 4, margin: 'auto' }}>
+        <Paper sx={{ p: 2, height: '30%', minHeight: '300px', width: 500, borderRadius: 5, textAlign: 'center' }}>
+          <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>
+            Weight Progress
+          </Typography>
+          {progressData.length > 0 ? (
+            <Box sx={{ height: '30%', minHeight:250, width: '100%' }}>
+              <Line
+                data={chartData}
+                options={{
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  scales: {
+                    x: {
+                      title: { display: true, text: 'Month' },
+                    },
+                    y: {
+                      title: { display: true, text: 'Weight (lbs)' },
+                      min: Math.min(...progressData.map((entry) => entry.weight)) - 10,
+                      max: Math.max(...progressData.map((entry) => entry.weight)) + 10,
+                    },
+                  },
+                }}
+              />
+            </Box>
+          ) : (
+            <Typography>No data available</Typography>
+          )}
+        </Paper>
+      </Box>
+
     </Box>
   );
 };
