@@ -217,6 +217,7 @@ const LandingPage: React.FC = () => {
                       pathColor: 'black',
                       textColor: 'black',
                       trailColor: 'gray',
+                      textSize: '1rem',
                     })}
                   />
                 </Box>

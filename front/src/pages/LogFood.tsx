@@ -247,6 +247,7 @@ const LogFood = ({ onAddMealItem }: { onAddMealItem?: (foodItem: any) => void })
       sodium: fullNutrition.sodium,
       sugar: fullNutrition.sugar,
       quantity: `${numServings} x ${fullNutrition.serving_description}`,
+      ...(mealType === "new-meal-plan" && { dayOfWeek, mealPlanType }),
     };
 
     if (onAddMealItem) {

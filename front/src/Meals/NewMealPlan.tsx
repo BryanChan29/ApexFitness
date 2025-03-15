@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Table,
   TableBody,
@@ -9,13 +9,28 @@ import {
   Paper,
   Typography,
   Button,
+  TextField,
   Switch,
   List,
   ListItem,
 } from '@mui/material';
 import { UIDailyMeal, UIFormattedMealPlan } from '@apex/shared';
 import LogFood from '../pages/LogFood';
-import { DailyFoodItem } from '../progresspage/Dashboard';
+
+interface DailyFoodItem {
+  id: number;
+  name: string;
+  mealPlanType: string;
+  quantity: string;
+  calories: number;
+  carbs: number;
+  fat: number;
+  protein: number;
+  sodium: number;
+  sugar: number;
+  date: string;
+  dayOfWeek: string;
+}
 
 const emptyMealPlan: UIFormattedMealPlan = {
   sunday: { breakfast: [], lunch: [], dinner: [], snack: [] },
@@ -30,7 +45,7 @@ const emptyMealPlan: UIFormattedMealPlan = {
 function NewMealPlan() {
   const [mealPlan, setMealPlan] = useState<UIFormattedMealPlan>(emptyMealPlan);
   const [isPublic, setIsPublic] = useState<boolean>(false);
-  const [foodItems, setFoodItems] = useState<DailyFoodItem[]>([]);
+  const [mealPlanName, setMealPlanName] = useState<string>('');
 
   const days = Object.keys(mealPlan) as Array<keyof UIFormattedMealPlan>;
   const mealTypes: Array<keyof UIDailyMeal> = [
@@ -46,38 +61,63 @@ function NewMealPlan() {
     setIsPublic(event.target.checked);
   }
 
-  function addFood() {
-    setMealPlan((prevMealPlan) => ({
-      ...prevMealPlan,
-      monday: {
-        ...prevMealPlan.monday,
-        breakfast: [
-          ...prevMealPlan.monday.breakfast,
-          {
-            name: 'Toast',
-            meal_type: 'breakfast',
-            calories: '100',
-            carbs: '5',
-            fat: '5',
-            protein: '5',
-            sodium: '5',
-            sugar: '5',
-          },
-        ],
-      },
-    }));
-  }
-
   const handleFoodAdd = (newFood: DailyFoodItem) => {
-    setFoodItems((prevItems) => [...prevItems, newFood]);
+    const { dayOfWeek, mealPlanType, ...foodItem } = newFood;
+    const normalizedDay = dayOfWeek.toLowerCase() as keyof UIFormattedMealPlan;
+
+    setMealPlan((prevMealPlan) => {
+      if (!prevMealPlan[normalizedDay]) {
+        console.error(`Invalid dayOfWeek: ${normalizedDay}`);
+        return prevMealPlan;
+      }
+
+      const updatedDayMealPlan = { ...prevMealPlan[normalizedDay] };
+
+      // Convert mealPlanType to lowercase here
+      const normalizedMealPlanType = String(mealPlanType).toLowerCase() as keyof UIDailyMeal;
+
+      updatedDayMealPlan[normalizedMealPlanType] = [
+        ...(updatedDayMealPlan[normalizedMealPlanType] || []),
+        { ...foodItem, mealPlanType: normalizedMealPlanType },
+      ];
+
+      console.log(updatedDayMealPlan);
+
+      return {
+        ...prevMealPlan,
+        [normalizedDay]: updatedDayMealPlan,
+      };
+    });
   };
+
+  useEffect(() => {
+    console.log('Updated Meal Plan:', mealPlan);
+  }, [mealPlan]);
 
   return (
     <div style={{ padding: '20px' }}>
       <LogFood onAddMealItem={handleFoodAdd} />
+        <TextField
+          label="Meal Plan Name"
+          value={mealPlanName}
+          onChange={(e) => setMealPlanName(e.target.value)}
+          margin="normal"
+          sx={{
+            width: '30%',
+          }}
+          slotProps={{
+            input: {
+              style: {
+                backgroundColor: 'white',
+                borderRadius: '30px',
+              },
+            },
+          }}
+        />
+
       <TableContainer
         component={Paper}
-        sx={{ borderRadius: '20px', overflow: 'hidden' }}
+        sx={{ borderRadius: '20px', overflow: 'hidden', width: '80%', margin: 'auto' }}
       >
         <Table>
           <TableHead>
@@ -103,9 +143,9 @@ function NewMealPlan() {
                 {days.map((day) => (
                   <TableCell key={day} align="center">
                     {mealPlan[day][mealType].length > 0 ? (
-                      <List sx={{ listStyleType: 'disc', paddingLeft: '20px' }}>
+                      <List sx={{ listStyleType: 'disc', listStylePosition: 'inside', textAlign: 'center' }}>
                         {mealPlan[day][mealType].map((meal, idx) => (
-                          <ListItem key={idx} sx={{ display: 'list-item' }}>
+                          <ListItem key={idx} sx={{ display: 'list-item', textAlign: 'center' }}>
                             {meal.name}
                           </ListItem>
                         ))}
@@ -129,14 +169,6 @@ function NewMealPlan() {
           inputProps={{ 'aria-label': 'controlled' }}
         />
       </div>
-
-      <Button
-        variant="contained"
-        className='primary-button'
-        onClick={addFood}
-      >
-        Add Food
-      </Button>
     </div>
   );
 }

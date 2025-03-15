@@ -9,6 +9,8 @@ export interface DBDailyFoodItem {
   protein: number;
   sodium: number;
   sugar: number;
+  quantity: string;
+  date: string;
 }
 export interface UIFormattedDailyFoodItem {
   name: string;
@@ -19,6 +21,7 @@ export interface UIFormattedDailyFoodItem {
   protein: string;
   sodium: string;
   sugar: string;
+  mealPlanType?: string;
 }
 
 export interface UIDailyMeal {
