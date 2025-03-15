@@ -11,7 +11,12 @@ interface CustomDatePickerProps {
 
 const CustomDatePicker: React.FC<CustomDatePickerProps> = ({ selectedDate, setSelectedDate }) => {
   const handlePrevDay = () => setSelectedDate(subDays(selectedDate, 1));
-  const handleNextDay = () => setSelectedDate(addDays(selectedDate, 1));
+  const handleNextDay = () => {
+    const nextDay = addDays(selectedDate, 1);
+    if (nextDay <= new Date()) {
+      setSelectedDate(nextDay);
+    }
+  };
 
   return (
     <Box

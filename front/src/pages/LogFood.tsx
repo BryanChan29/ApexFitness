@@ -1,4 +1,4 @@
-import { Box, TextField, Button, InputAdornment, Typography } from "@mui/material";
+import { Box, TextField, Button, InputAdornment, Typography, Modal, FormControl, InputLabel, Select, MenuItem } from "@mui/material";
 import { useState, useEffect } from "react";
 import { useLocation, useNavigate } from 'react-router-dom';
 import axios from "axios";
@@ -108,6 +108,8 @@ const LogFood = ({ onAddMealItem }: { onAddMealItem?: (foodItem: any) => void })
   const [mealPlanType, setMealPlanType] = useState("breakfast");
   const [savedMeals, setSavedMeals] = useState<Meal[]>([]);
   const [loadingSavedMeals, setLoadingSavedMeals] = useState(true);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [currentMeal, setCurrentMeal] = useState<Meal | null>(null);
 
   useEffect(() => {
     if (!mealType || !["breakfast", "lunch", "dinner", "snack", "new-meal", "new-meal-plan"].includes(mealType)) {
@@ -257,20 +259,20 @@ const LogFood = ({ onAddMealItem }: { onAddMealItem?: (foodItem: any) => void })
 
   const handleDeleteMeal = async (meal_id: number) => {
     try {
-    const response = await axios.delete(`/api/meals/${meal_id}`);
-    if (response.status === 200) {
-      setSavedMeals((prevMeals) => prevMeals.filter((meal) => meal.meal_id !== meal_id));
-    } else {
-      console.error('Failed to delete meal:', response.data.error);
-    }
+      const response = await axios.delete(`/api/meals/${meal_id}`);
+      if (response.status === 200) {
+        setSavedMeals((prevMeals) => prevMeals.filter((meal) => meal.meal_id !== meal_id));
+      } else {
+        console.error('Failed to delete meal:', response.data.error);
+      }
     } catch (error) {
-    console.error('Error deleting meal:', error);
+      console.error('Error deleting meal:', error);
     }
   };
 
   const handleLogMeal = async (meal: Meal) => {
     if (!meal || !meal.food_items) return;
-  
+
     const summedValues = meal.food_items.reduce(
       (acc, item) => ({
         calories: acc.calories + item.calories,
@@ -282,7 +284,7 @@ const LogFood = ({ onAddMealItem }: { onAddMealItem?: (foodItem: any) => void })
       }),
       { calories: 0, carbs: 0, fat: 0, protein: 0, sodium: 0, sugar: 0 }
     );
-  
+
     const payload = {
       meal_type: mealType,
       name: meal.meal_name,
@@ -290,10 +292,11 @@ const LogFood = ({ onAddMealItem }: { onAddMealItem?: (foodItem: any) => void })
       quantity: "1 serving",
       ...summedValues,
     };
-  
+
     try {
       const response = await axios.post('/api/daily_food', payload);
       console.log('Meal logged successfully:', response.data);
+      navigate(-1);
     } catch (error) {
       if (axios.isAxiosError(error)) {
         console.error('Error logging meal:', error.response?.data || error.message);
@@ -302,7 +305,52 @@ const LogFood = ({ onAddMealItem }: { onAddMealItem?: (foodItem: any) => void })
       }
     }
   };
-  
+
+  const handleAddMealItemToPlan = () => {
+    if (!currentMeal || !currentMeal.food_items) return;
+
+    const summedValues = currentMeal.food_items.reduce(
+      (acc, item) => ({
+        calories: acc.calories + item.calories,
+        carbs: acc.carbs + item.carbs,
+        fat: acc.fat + item.fat,
+        protein: acc.protein + item.protein,
+        sodium: acc.sodium + (item.sodium || 0),
+        sugar: acc.sugar + (item.sugar || 0),
+      }),
+      { calories: 0, carbs: 0, fat: 0, protein: 0, sodium: 0, sugar: 0 }
+    );
+
+    const newMealItem = {
+      name: currentMeal.meal_name,
+      calories: summedValues.calories,
+      carbs: summedValues.carbs,
+      fat: summedValues.fat,
+      protein: summedValues.protein,
+      sodium: summedValues.sodium,
+      sugar: summedValues.sugar,
+      quantity: "1 serving",
+      dayOfWeek,
+      mealPlanType,
+    };
+
+    if (onAddMealItem) {
+      onAddMealItem(newMealItem);
+    }
+    handleCloseModal();
+  };
+
+  const handleOpenModal = (meal: Meal) => {
+    setCurrentMeal(meal);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setDayOfWeek('');
+    setMealPlanType('');
+    setCurrentMeal(null);
+  };
 
   useEffect(() => {
     if (!foodDetail) return;
@@ -635,7 +683,7 @@ const LogFood = ({ onAddMealItem }: { onAddMealItem?: (foodItem: any) => void })
         </Box>
       )}
 
-      {mealType !== "new-meal" && (
+      {mealType !== "new-meal" && mealType !== "new-meal-plan" && (
         <Box sx={{ mb: 4, mt: 4, width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
             <Typography variant="h3" sx={{ mb: 2, fontWeight: 'bold' }}>Saved Meals</Typography>
@@ -654,7 +702,7 @@ const LogFood = ({ onAddMealItem }: { onAddMealItem?: (foodItem: any) => void })
               <Box key={meal.meal_id} sx={{ width: '100%', mb: 4, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <NutritionTable foodData={meal.food_items} summation={true} mealName={meal.meal_name} />
                 <Box sx={{ display: 'flex', flexDirection: 'column', ml: 2 }}>
-                  <span className="material-symbols-rounded" style={{ fontSize: "40px", cursor: "pointer", marginBottom: "8px"}} onClick={() => handleLogMeal(meal)}>
+                  <span className="material-symbols-rounded" style={{ fontSize: "40px", cursor: "pointer", marginBottom: "8px" }} onClick={() => handleLogMeal(meal)}>
                     add_circle
                   </span>
                   <span className="material-symbols-rounded" style={{ fontSize: "40px", cursor: "pointer" }} onClick={() => handleDeleteMeal(meal.meal_id)}>
@@ -680,6 +728,85 @@ const LogFood = ({ onAddMealItem }: { onAddMealItem?: (foodItem: any) => void })
               No saved meals yet.
             </Box>
           )}
+        </Box>
+      )}
+
+      {mealType === "new-meal-plan" && (
+        <Box sx={{ mb: 4, mt: 4, width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+          <Typography variant="h3" sx={{ mb: 2, fontWeight: 'bold' }}>New Meal Plan</Typography>
+          {savedMeals.length > 0 ? (
+            savedMeals.map((meal) => (
+              <Box key={meal.meal_id} sx={{ width: '100%', mb: 4, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <NutritionTable foodData={meal.food_items} summation={true} mealName={meal.meal_name} />
+                <Box sx={{ display: 'flex', flexDirection: 'column', ml: 2 }}>
+                  <span className="material-symbols-rounded" style={{ fontSize: "40px", cursor: "pointer", marginBottom: "8px" }} onClick={() => handleOpenModal(meal)}>
+                    add_circle
+                  </span>
+                </Box>
+              </Box>
+            ))
+          ) : (
+            <Box
+              sx={{
+                color: 'gray',
+                fontWeight: 'bold',
+                backgroundColor: 'white',
+                padding: '50px',
+                borderRadius: '20px',
+                boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)',
+                width: "95%",
+                fontSize: '2rem',
+                textAlign: 'center',
+              }}
+            >
+              No saved meals yet.
+            </Box>
+          )}
+          <Modal open={isModalOpen} onClose={handleCloseModal}>
+            <Box sx={{
+              position: 'absolute',
+              top: '50%',
+              left: '50%',
+              transform: 'translate(-50%, -50%)',
+              backgroundColor: 'white',
+              padding: '20px',
+              borderRadius: '20px',
+              width: '400px',
+            }}>
+              <Typography variant="h6" sx={{ mb: 2, fontWeight: 'bold' }}>Specify Plan Details</Typography>
+
+              <FormControl fullWidth sx={{ mb: 2 }}>
+                <InputLabel>Day of Week</InputLabel>
+                <Select
+                  value={dayOfWeek}
+                  label="Day of Week"
+                  onChange={(e) => setDayOfWeek(e.target.value)}
+                >
+                  {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map((day) => (
+                    <MenuItem key={day} value={day}>{day}</MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+
+              <FormControl fullWidth sx={{ mb: 2 }}>
+                <InputLabel>Meal Plan Type</InputLabel>
+                <Select
+                  value={mealPlanType}
+                  label="Meal Plan Type"
+                  onChange={(e) => setMealPlanType(e.target.value)}
+                >
+                  {['Breakfast', 'Lunch', 'Dinner', 'Snack'].map((mealType) => (
+                    <MenuItem key={mealType} value={mealType}>{mealType}</MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+
+              <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                <Button className="primary-button" onClick={handleCloseModal}>Cancel</Button>
+                <Button className="primary-button" onClick={handleAddMealItemToPlan}>Add Meal</Button>
+              </Box>
+            </Box>
+          </Modal>
         </Box>
       )}
     </Box>
