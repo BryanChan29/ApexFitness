@@ -4,8 +4,11 @@ import {
   Button,
   Paper,
   Typography,
+  Tooltip,
+  IconButton,
   CircularProgress,
 } from '@mui/material';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { useTheme } from '@mui/material/styles';
 import axios from 'axios';
 import EditableWeightCircle from './EditableWeightCircle';
@@ -13,6 +16,7 @@ import EditableStatCard from './EditableStatCard';
 import {
   calculateCalorieMetrics,
   CalorieResults,
+  GoalType
 } from '../utils/CalorieCalculations';
 
 
@@ -22,7 +26,7 @@ interface WeightMetrics {
   height: number | null;
   age: number | null;
   activity_level: string | null;
-  gender: 'male' | 'female' | null; // Add this
+  gender: 'male' | 'female' | null; 
 }
 
 const WeightMetricsUI: React.FC = () => {
@@ -107,6 +111,17 @@ const WeightMetricsUI: React.FC = () => {
       ? Math.abs(metrics.current_weight - metrics.goal_weight)
       : null;
 
+  const getGoalType = (): GoalType => {
+    if (
+      metrics.current_weight === null ||
+      metrics.goal_weight === null ||
+      metrics.current_weight === metrics.goal_weight
+    ) {
+      return 'maintain';
+    }
+    return metrics.current_weight < metrics.goal_weight ? 'gain' : 'lose';
+  };
+
   const handleSave = async () => {
     try {
       const payload = {...metrics
@@ -127,6 +142,7 @@ const WeightMetricsUI: React.FC = () => {
       console.error('Error updating metrics:', err);
     }
   };
+  
 
   if (loading) {
     return (
@@ -160,11 +176,106 @@ const WeightMetricsUI: React.FC = () => {
 
   return (
     <Box
-      sx={{
-        minHeight: '100vh',
-        py: 5,
-      }}
-    >
+    sx={{
+      display: 'flex', // Enables flexbox
+      justifyContent: 'center', // Center main metrics container
+      alignItems: 'flex-start', // Align to the top
+      gap: 1, // Spacing between columns
+      minHeight: '100vh',
+      py: 5,
+    }}
+  >
+    {/* Left Column: Calorie Info */}
+    {calorieResults.dailyIntake !== null && (
+      <Paper
+        elevation={2}
+        sx={{
+          p: 3,
+          maxWidth: 300, // Adjust width as needed
+          textAlign: 'center',
+          borderRadius: 2,
+          mx: 'auto',
+          // flexGrow: 1,
+          // ml: -2,
+        }}
+      >
+        <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+          Calorie Plan
+          <Tooltip
+                title={
+                  getGoalType() === 'lose'
+                    ? 'This plan calculates your daily calorie needs for weight loss based on your BMR, TDEE, and a 500-calorie deficit.'
+                    : getGoalType() === 'gain'
+                    ? 'This plan calculates your daily calorie needs for muscle gain based on your BMR, TDEE, and a 250-calorie surplus.'
+                    : 'This plan calculates your daily calorie needs to maintain your current weight based on your BMR and TDEE.'
+                }
+                
+              >
+                <IconButton size="small" sx={{ ml: 0.5 }}>
+                  <InfoOutlinedIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+        </Typography>
+        <Typography>BMR: {calorieResults.bmr?.toFixed(0)} calories
+          <Tooltip title="Basal Metabolic Rate: The number of calories your body burns at rest.">
+            <IconButton size="small" sx={{ ml: 0.5 }}>
+              <InfoOutlinedIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        </Typography>
+        <Typography>
+          TDEE: {calorieResults.tdee?.toFixed(0)} calories
+          <Tooltip title="Total Daily Energy Expenditure: Your BMR adjusted for your activity level.">
+            <IconButton size="small" sx={{ ml: 0.5 }}>
+              <InfoOutlinedIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        </Typography>
+        <Typography>
+        Daily Intake: {calorieResults.dailyIntake.toFixed(0)} calories{' '}
+            {getGoalType() !== 'maintain' && (
+              <>
+                ({getGoalType() === 'gain' ? '250-calorie surplus' : '500-calorie deficit'})
+              </>
+            )}
+            <Tooltip
+              title={
+                getGoalType() === 'lose'
+                  ? 'Recommended daily calorie intake to achieve a 500-calorie deficit for weight loss.'
+                  : getGoalType() === 'gain'
+                  ? 'Recommended daily calorie intake to achieve a 250-calorie surplus for muscle gain.'
+                  : 'Recommended daily calorie intake to maintain your current weight.'
+              }
+        
+            >
+              <IconButton size="small" sx={{ ml: 0.5 }}>
+                <InfoOutlinedIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+        </Typography>
+        <Typography>
+        Days to Goal: {calorieResults.daysToGoal?.toFixed(0)}
+              {getGoalType() === 'gain' && (
+                <Typography variant="caption" color="textSecondary" sx={{ ml: 1 }}>
+                  (Note: Realistic muscle gain may take longer, typically 1-2 lbs/month.)
+                </Typography>
+              )}
+              <Tooltip
+                title={
+                  getGoalType() === 'gain'
+                    ? 'Estimated days to gain your target muscle based on a maximum sustainable gain rate of 1-2 lbs/month.'
+                    : 'Estimated days to lose your target weight based on a 500-calorie deficit.'
+                }
+              >
+                <IconButton size="small" sx={{ ml: 0.5 }}>
+                  <InfoOutlinedIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+        {/* Days to Goal: {calorieResults.daysToGoal?.toFixed(0)} */}
+        </Typography>
+      </Paper>
+    )}
+    
       <Paper
         elevation={4}
         sx={{
@@ -282,25 +393,16 @@ const WeightMetricsUI: React.FC = () => {
         
         </Box>
 
-        {/* Difference Text */}
+        
+
         {weightDifference !== null && (
           <Typography variant="h3" sx={{ fontWeight: 'bold', mb: 3 }}>
-            {weightDifference.toFixed(1)} pounds to go!
+            {getGoalType() === 'maintain'
+              ? 'Maintaining your current weight!'
+              : `${weightDifference.toFixed(1)} pounds to ${getGoalType() === 'gain' ? 'gain' : 'lose'}!`}
           </Typography>
         )}
 
-        {/* New Calorie Results */}
-        {calorieResults.dailyIntake !== null && (
-          <Box sx={{ mb: 3 }}>
-            <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
-              Calorie Plan
-            </Typography>
-            <Typography>BMR: {calorieResults.bmr?.toFixed(0)} kcal</Typography>
-            <Typography>TDEE: {calorieResults.tdee?.toFixed(0)} kcal</Typography>
-            <Typography>Daily Intake: {calorieResults.dailyIntake.toFixed(0)} kcal (500 kcal deficit)</Typography>
-            <Typography>Days to Goal: {calorieResults.daysToGoal?.toFixed(0)}</Typography>
-          </Box>
-        )}
 
         {/* Save Button */}
         <Button
