@@ -21,7 +21,6 @@ export interface UIFormattedDailyFoodItem {
   protein: string;
   sodium: string;
   sugar: string;
-  mealPlanType?: string;
 }
 
 export interface UIDailyMeal {
