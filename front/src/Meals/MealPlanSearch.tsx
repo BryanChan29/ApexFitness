@@ -75,7 +75,7 @@ const MealPlanSearch = () => {
         <Grid container spacing={2}>
           {filteredMealPlans.map((plan) => (
             <Grid item xs={12} sm={6} md={4} key={plan.id}>
-              <Card>
+              <Card style={{ borderRadius: '20px' }}>
                 <CardActionArea
                   onClick={() => {
                     navigate(`/share/meal-plan/${plan.id}`);

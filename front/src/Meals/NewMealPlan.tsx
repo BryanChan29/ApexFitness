@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Table,
   TableBody,
@@ -16,6 +17,7 @@ import {
 } from '@mui/material';
 import { UIDailyMeal, UIFormattedMealPlan } from '@apex/shared';
 import LogFood from '../pages/LogFood';
+import { Snackbar, Alert } from '@mui/material';
 
 interface DailyFoodItem {
   id: number;
@@ -46,6 +48,10 @@ function NewMealPlan() {
   const [mealPlan, setMealPlan] = useState<UIFormattedMealPlan>(emptyMealPlan);
   const [isPublic, setIsPublic] = useState<boolean>(false);
   const [mealPlanName, setMealPlanName] = useState<string>('');
+  const navigate = useNavigate();
+  const [openSnackbar, setOpenSnackbar] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
+  const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error'>('error');
 
   const days = Object.keys(mealPlan) as Array<keyof UIFormattedMealPlan>;
   const mealTypes: Array<keyof UIDailyMeal> = [
@@ -112,8 +118,12 @@ function NewMealPlan() {
 
       const result = await response.json();
       console.log('Meal Plan Saved:', result);
+      navigate(-1);
     } catch (error) {
       console.error('Error saving meal plan:', error);
+      setSnackbarMessage((error as Error).message || 'Failed to save meal plan');
+      setSnackbarSeverity('error');
+      setOpenSnackbar(true);
     }
   };
 
@@ -124,23 +134,23 @@ function NewMealPlan() {
   return (
     <div style={{ padding: '20px' }}>
       <LogFood onAddMealItem={handleFoodAdd} />
-        <TextField
-          label="Meal Plan Name"
-          value={mealPlanName}
-          onChange={(e) => setMealPlanName(e.target.value)}
-          margin="normal"
-          sx={{
-            width: '30%',
-          }}
-          slotProps={{
-            input: {
-              style: {
-                backgroundColor: 'white',
-                borderRadius: '30px',
-              },
+      <TextField
+        label="Meal Plan Name"
+        value={mealPlanName}
+        onChange={(e) => setMealPlanName(e.target.value)}
+        margin="normal"
+        sx={{
+          width: '30%',
+        }}
+        slotProps={{
+          input: {
+            style: {
+              backgroundColor: 'white',
+              borderRadius: '30px',
             },
-          }}
-        />
+          },
+        }}
+      />
 
       <TableContainer
         component={Paper}
@@ -207,6 +217,20 @@ function NewMealPlan() {
           inputProps={{ 'aria-label': 'controlled' }}
         />
       </div>
+
+      <Snackbar
+        open={openSnackbar}
+        autoHideDuration={6000}
+        onClose={() => setOpenSnackbar(false)}
+      >
+        <Alert
+          onClose={() => setOpenSnackbar(false)}
+          severity={snackbarSeverity}
+          sx={{ width: '100%' }}
+        >
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
     </div>
   );
 }

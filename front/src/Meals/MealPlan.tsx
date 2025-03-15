@@ -155,7 +155,7 @@ function MealPlan({
             {isPublic && (
               <Button
                 variant="contained"
-                style={{ marginBottom: '10px', borderRadius: '25px' }}
+                className="primary-button"
                 onClick={shareMealPlan}
               >
                 Copy Link

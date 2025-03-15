@@ -255,6 +255,19 @@ const LogFood = ({ onAddMealItem }: { onAddMealItem?: (foodItem: any) => void })
     }
   };
 
+  const handleDeleteMeal = async (meal_id: number) => {
+    try {
+    const response = await axios.delete(`/api/meals/${meal_id}`);
+    if (response.status === 200) {
+      setSavedMeals((prevMeals) => prevMeals.filter((meal) => meal.meal_id !== meal_id));
+    } else {
+      console.error('Failed to delete meal:', response.data.error);
+    }
+    } catch (error) {
+    console.error('Error deleting meal:', error);
+    }
+  };
+
   useEffect(() => {
     if (!foodDetail) return;
 
@@ -292,10 +305,10 @@ const LogFood = ({ onAddMealItem }: { onAddMealItem?: (foodItem: any) => void })
     const fetchSavedMeals = async () => {
       try {
         const response = await axios.get('/api/meals');
-    
+
         if (response.data && Array.isArray(response.data.meals)) {
           const parsedData = MealsSchema.safeParse(response.data.meals);
-    
+
           if (parsedData.success) {
             setSavedMeals(parsedData.data);
           } else {
@@ -309,8 +322,8 @@ const LogFood = ({ onAddMealItem }: { onAddMealItem?: (foodItem: any) => void })
       } finally {
         setLoadingSavedMeals(false);
       }
-    };    
-  
+    };
+
     fetchSavedMeals();
   }, []);
 
@@ -599,11 +612,38 @@ const LogFood = ({ onAddMealItem }: { onAddMealItem?: (foodItem: any) => void })
               Add a New Meal
             </Button>
           </Box>
-          {savedMeals.map((meal) => (
-            <Box key={meal.meal_id} sx={{ width: '100%', mb: 4 }}>
-              <NutritionTable foodData={meal.food_items} summation={true} mealName={meal.meal_name} />
+
+          {savedMeals.length > 0 ? (
+            savedMeals.map((meal) => (
+              <Box key={meal.meal_id} sx={{ width: '100%', mb: 4, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <NutritionTable foodData={meal.food_items} summation={true} mealName={meal.meal_name} />
+                <Box sx={{ display: 'flex', flexDirection: 'column', ml: 2 }}>
+                  <span className="material-symbols-rounded" style={{ fontSize: "40px", cursor: "pointer", marginBottom: "8px" }}>
+                    add_circle
+                  </span>
+                  <span className="material-symbols-rounded" style={{ fontSize: "40px", cursor: "pointer" }} onClick={() => handleDeleteMeal(meal.meal_id)}>
+                    delete
+                  </span>
+                </Box>
+              </Box>
+            ))
+          ) : (
+            <Box
+              sx={{
+                color: 'gray',
+                fontWeight: 'bold',
+                backgroundColor: 'white',
+                padding: '50px',
+                borderRadius: '20px',
+                boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)',
+                width: "95%",
+                fontSize: '2rem',
+                textAlign: 'center',
+              }}
+            >
+              No saved meals yet.
             </Box>
-          ))}
+          )}
         </Box>
       )}
     </Box>

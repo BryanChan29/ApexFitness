@@ -5,7 +5,6 @@ import * as url from 'url';
 import {
   DBDailyFoodItem,
   UIDailyMeal,
-  UIFormattedDailyFoodItem,
   UIFormattedMealPlan,
   User,
 } from '@apex/shared';
@@ -484,7 +483,7 @@ requestRouter.get('/meal_plan/:id', async (req, res) => {
 
     result.forEach((row) => {
       const dayOfWeek = row.day_of_week.toLowerCase() as keyof UIFormattedMealPlan;
-    
+
       if (!formattedMealPlan[dayOfWeek]) {
         formattedMealPlan[dayOfWeek] = {
           breakfast: [],
@@ -493,15 +492,15 @@ requestRouter.get('/meal_plan/:id', async (req, res) => {
           snack: [],
         };
       }
-    
+
       const dailyFoods = row.daily_foods ? JSON.parse(row.daily_foods) : [];
       dailyFoods.forEach((food: any) => {
-        let mealType = food.meal_type.startsWith("meal-plan-item-") 
-          ? food.meal_type.replace("meal-plan-item-", "").toLowerCase() 
+        let mealType = food.meal_type.startsWith("meal-plan-item-")
+          ? food.meal_type.replace("meal-plan-item-", "").toLowerCase()
           : null;
-    
+
         const validMealTypes: (keyof UIDailyMeal)[] = ["breakfast", "lunch", "dinner", "snack"];
-    
+
         if (mealType && validMealTypes.includes(mealType as keyof UIDailyMeal)) {
           if (!formattedMealPlan[dayOfWeek]![mealType as keyof UIDailyMeal]) {
             formattedMealPlan[dayOfWeek]![mealType as keyof UIDailyMeal] = [];
@@ -511,7 +510,7 @@ requestRouter.get('/meal_plan/:id', async (req, res) => {
           console.warn(`Skipping invalid meal type: ${food.meal_type}`);
         }
       });
-    });    
+    });
 
     return res.json({ name: mealPlanName, result: formattedMealPlan });
   } catch (err: any) {
@@ -558,11 +557,11 @@ requestRouter.get('/user/meal_plan', async (req, res) => {
       return res.json({ meal_plans: [] });
     }
 
-    const formattedMealPlans: { 
-      meal_plan_id: number; 
-      name: string; 
-      is_private: boolean; 
-      plan: Partial<UIFormattedMealPlan> 
+    const formattedMealPlans: {
+      meal_plan_id: number;
+      name: string;
+      is_private: boolean;
+      plan: Partial<UIFormattedMealPlan>
     }[] = [];
 
     const mealPlansMap = new Map<number, Partial<UIFormattedMealPlan>>();
@@ -596,8 +595,8 @@ requestRouter.get('/user/meal_plan', async (req, res) => {
 
       const dailyFoods = row.daily_foods ? JSON.parse(row.daily_foods) : [];
       dailyFoods.forEach((food: any) => {
-        let mealType = food.meal_type.startsWith("meal-plan-item-") 
-          ? food.meal_type.replace("meal-plan-item-", "").toLowerCase() 
+        let mealType = food.meal_type.startsWith("meal-plan-item-")
+          ? food.meal_type.replace("meal-plan-item-", "").toLowerCase()
           : null;
 
         const validMealTypes: (keyof UIDailyMeal)[] = ["breakfast", "lunch", "dinner", "snack"];
@@ -606,7 +605,7 @@ requestRouter.get('/user/meal_plan', async (req, res) => {
           if (!mealPlan[dayOfWeek]![mealType as keyof UIDailyMeal]) {
             mealPlan[dayOfWeek]![mealType as keyof UIDailyMeal] = [];
           }
-          
+
           (mealPlan[dayOfWeek]![mealType as keyof UIDailyMeal] as any[]).push(food);
         } else {
           console.warn(`Skipping invalid meal type: ${food.meal_type}`);
@@ -1224,14 +1223,14 @@ app.post("/api/meal-plans", async (req, res) => {
     for (const [day, mealTypes] of Object.entries(meals)) {
       for (const [mealType, foods] of Object.entries(mealTypes as { [key: string]: any })) {
         for (const food of foods) {
-            const foodResult = await db.run(
+          const foodResult = await db.run(
             `INSERT INTO daily_food (user_id, meal_type, name, quantity, calories, carbs, fat, protein, sodium, sugar, date)
                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, date('now'))`,
             [
               user_id, `meal-plan-item-${mealType}`, food.name, food.quantity, food.calories,
               food.carbs, food.fat, food.protein, food.sodium, food.sugar
             ]
-            );
+          );
           const foodId = foodResult.lastID;
 
           await db.run(
@@ -1249,6 +1248,34 @@ app.post("/api/meal-plans", async (req, res) => {
   }
 });
 
+
+app.delete('/api/meals/:meal_id', async (req, res) => {
+  const user_id = await getUserIdFromCookies(req.cookies.token);
+  const meal_id = parseInt(req.params.meal_id, 10);
+
+  if (!user_id) {
+    return res.status(401).json({ error: 'Not authenticated' });
+  }
+
+  if (isNaN(meal_id)) {
+    return res.status(400).json({ error: 'Invalid meal ID' });
+  }
+
+  try {
+    const meal = await db.get('SELECT * FROM meals WHERE id = ? AND user_id = ?', [meal_id, user_id]);
+
+    if (!meal) {
+      return res.status(404).json({ error: 'Meal not found or does not belong to the user' });
+    }
+
+    await db.run('DELETE FROM meals WHERE id = ?', [meal_id]);
+
+    return res.status(200).json({ message: 'Meal deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting meal:', error);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
 
 // run server
 let port = 3000;
