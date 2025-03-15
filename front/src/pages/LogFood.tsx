@@ -492,7 +492,6 @@ const LogFood = ({ onAddMealItem }: { onAddMealItem?: (foodItem: any) => void })
               boxShadow: "0px 4px 12px rgba(0, 0, 0, 0.1)",
               overflowY: "auto",
               maxHeight: "400px",
-              flexDirection: "column",
             }}
           >
             {results.foods?.food?.map((result, index) => (
