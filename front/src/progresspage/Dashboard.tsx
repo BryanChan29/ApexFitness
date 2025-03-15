@@ -27,7 +27,7 @@ const ProgressDashboard: React.FC = () => {
   const [dinnerData, setDinnerData] = useState<DailyFoodItem[]>([]);
   const [snackData, setSnackData] = useState<DailyFoodItem[]>([]);
 
-  const [selectedDate, setSelectedDate] = useState<Date | null>(new Date()); 
+  const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
 
   useEffect(() => {
     const fetchDailyFood = async () => {
@@ -62,7 +62,7 @@ const ProgressDashboard: React.FC = () => {
     };
 
     fetchDailyFood();
-  }, [selectedDate]); 
+  }, [selectedDate]);
 
   return (
     <Container maxWidth="lg" sx={{ mb: 4 }}>
@@ -96,7 +96,7 @@ const ProgressDashboard: React.FC = () => {
             <Typography variant="h3" sx={{ fontWeight: 'bold' }}>
               Lunch
             </Typography>
-            <Link to="/add-food?mealType=lunch">
+            <Link to={`/add-food?mealType=lunch&date=${selectedDate ? format(selectedDate, 'yyyy-MM-dd') : ''}`}>
               <Button variant="contained" className="primary-button">
                 Add Lunch
               </Button>
@@ -108,7 +108,7 @@ const ProgressDashboard: React.FC = () => {
             <Typography variant="h3" sx={{ fontWeight: 'bold' }}>
               Dinner
             </Typography>
-            <Link to="/add-food?mealType=dinner">
+            <Link to={`/add-food?mealType=dinner&date=${selectedDate ? format(selectedDate, 'yyyy-MM-dd') : ''}`}>
               <Button variant="contained" className="primary-button">
                 Add Dinner
               </Button>
@@ -120,7 +120,7 @@ const ProgressDashboard: React.FC = () => {
             <Typography variant="h3" sx={{ fontWeight: 'bold' }}>
               Snacks
             </Typography>
-            <Link to="/add-food?mealType=snack">
+            <Link to={`/add-food?mealType=snack&date=${selectedDate ? format(selectedDate, 'yyyy-MM-dd') : ''}`}>
               <Button variant="contained" className="primary-button">
                 Add Snack
               </Button>
@@ -131,8 +131,8 @@ const ProgressDashboard: React.FC = () => {
           <Typography variant="h3" sx={{ mb: 2, fontWeight: 'bold' }}>
             Total
           </Typography>
-            <NutritionTable foodData={[...breakfastData, ...lunchData, ...dinnerData, ...snackData]} summation={true} />
-          </Box>
+          <NutritionTable foodData={[...breakfastData, ...lunchData, ...dinnerData, ...snackData]} summation={true} />
+        </Box>
       </Box>
     </Container>
   );
