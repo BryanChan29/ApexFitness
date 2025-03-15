@@ -104,7 +104,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ open, onClose, type }) => {
 
   return (
     <Modal open={open} onClose={onClose}>
-      <Box sx={modalStyle} onKeyDown={handleKeyDown}>
+      <Box sx={{ ...modalStyle, borderRadius: 10 }} onKeyDown={handleKeyDown}>
         <Box display="flex" justifyContent="space-between">
           <Typography variant="h6">
             {type === 'register' ? 'Register' : 'Login'}

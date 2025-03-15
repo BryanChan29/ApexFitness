@@ -99,9 +99,8 @@ function UserMealPlans() {
         <h2 style={{ margin: 0 }}>User Meal Plans</h2>
         <Button
           variant="contained"
-          color="primary"
-          style={{ borderRadius: '25px' }}
-          onClick={() => navigate('/new-meal-plan')}
+          className='primary-button'
+          onClick={() => navigate('/new-meal-plan?mealType=new-meal-plan')}
         >
           Add New Meal Plan
         </Button>

@@ -5,7 +5,6 @@ import * as url from 'url';
 import {
   DBDailyFoodItem,
   UIDailyMeal,
-  UIFormattedDailyFoodItem,
   UIFormattedMealPlan,
   User,
 } from '@apex/shared';
@@ -36,7 +35,6 @@ const BURN_API_URL = 'https://api.api-ninjas.com/v1/caloriesburned';
 
 let app = express();
 app.use(express.json());
-const requestRouter = express.Router();
 
 const __dirname = url.fileURLToPath(new URL('..', import.meta.url));
 const dbfile = `${__dirname}database.db`;
@@ -387,7 +385,6 @@ app.put('/api/meal_plan', async (req, res) => {
       return 'Meal Plan ID, Name and isPrivate values are required';
     }
     if (!id) return 'Meal Plan ID required';
-    if (!name) return 'Meal Plan Name required';
     if (isPrivate === undefined || isPrivate === null)
       return 'isPrivate required';
     return null;
@@ -395,6 +392,7 @@ app.put('/api/meal_plan', async (req, res) => {
 
   const validationError = validateRequest();
   if (validationError) {
+    console.log(validationError);
     return res.status(400).json({ error: validationError });
   }
 
@@ -413,11 +411,11 @@ app.put('/api/meal_plan', async (req, res) => {
     // Prepare the update query
     const statement = await db.prepare(
       `UPDATE meal_plans 
-       SET name = ?, is_private = ? 
+       SET is_private = ? 
        WHERE id = ?`
     );
 
-    await statement.run(name, isPrivate, id);
+    await statement.run(isPrivate, id);
 
     return res
       .status(200)
@@ -428,7 +426,7 @@ app.put('/api/meal_plan', async (req, res) => {
   }
 });
 
-requestRouter.get('/meal_plan/:id', async (req, res) => {
+app.get('/api/meal_plan/:id', async (req, res) => {
   let result: {
     day_of_week: string;
     daily_foods: string;
@@ -442,30 +440,28 @@ requestRouter.get('/meal_plan/:id', async (req, res) => {
   }
 
   const query = `
-    SELECT 
-        mpi.day_of_week,
-        mp.name,
-        df.user_id,
-        mp.is_private,
-        json_group_array(
-            json_object(
-                'name', df.name,
-                'meal_type', df.meal_type,
-                'calories', df.calories,
-                'carbs', df.carbs,
-                'fat', df.fat,
-                'protein', df.protein,
-                'sodium', df.sodium,
-                'sugar', df.sugar
-            )
-        ) AS daily_foods
-    FROM meal_plans mp
-    LEFT JOIN meal_plan_items mpi ON mp.id = mpi.meal_plan_id
-    LEFT JOIN meals m ON mpi.meal_id = m.id
-    LEFT JOIN meal_items mi ON m.id = mi.meal_id
-    LEFT JOIN daily_food df ON mi.food_id = df.id
-    WHERE mp.id = ?
-    GROUP BY mpi.day_of_week;
+      SELECT 
+          mpi.day_of_week,
+          mp.name AS meal_plan_name,
+          df.user_id,
+          mp.is_private,
+          json_group_array(
+              json_object(
+                  'name', df.name,
+                  'meal_type', df.meal_type,
+                  'calories', df.calories,
+                  'carbs', df.carbs,
+                  'fat', df.fat,
+                  'protein', df.protein,
+                  'sodium', df.sodium,
+                  'sugar', df.sugar
+              )
+          ) AS daily_foods
+      FROM meal_plans mp
+      LEFT JOIN meal_plan_items mpi ON mp.id = mpi.meal_plan_id
+      LEFT JOIN daily_food df ON mpi.food_id = df.id  -- This is the missing link
+      WHERE mp.id = ?
+      GROUP BY mpi.day_of_week;
   `;
 
   try {
@@ -485,8 +481,7 @@ requestRouter.get('/meal_plan/:id', async (req, res) => {
     const mealPlanName = result[0].name;
 
     result.forEach((row) => {
-      const dayOfWeek =
-        row.day_of_week.toLowerCase() as keyof UIFormattedMealPlan; // Use day_of_week directly
+      const dayOfWeek = row.day_of_week.toLowerCase() as keyof UIFormattedMealPlan;
 
       if (!formattedMealPlan[dayOfWeek]) {
         formattedMealPlan[dayOfWeek] = {
@@ -497,13 +492,22 @@ requestRouter.get('/meal_plan/:id', async (req, res) => {
         };
       }
 
-      const dailyFoods: UIFormattedDailyFoodItem[] = row.daily_foods
-        ? JSON.parse(row.daily_foods)
-        : [];
+      const dailyFoods = row.daily_foods ? JSON.parse(row.daily_foods) : [];
+      dailyFoods.forEach((food: any) => {
+        let mealType = food.meal_type.startsWith("meal-plan-item-")
+          ? food.meal_type.replace("meal-plan-item-", "").toLowerCase()
+          : null;
 
-      dailyFoods.forEach((food) => {
-        const mealType = food.meal_type.toLowerCase() as keyof UIDailyMeal;
-        formattedMealPlan[dayOfWeek]![mealType].push(food);
+        const validMealTypes: (keyof UIDailyMeal)[] = ["breakfast", "lunch", "dinner", "snack"];
+
+        if (mealType && validMealTypes.includes(mealType as keyof UIDailyMeal)) {
+          if (!formattedMealPlan[dayOfWeek]![mealType as keyof UIDailyMeal]) {
+            formattedMealPlan[dayOfWeek]![mealType as keyof UIDailyMeal] = [];
+          }
+          formattedMealPlan[dayOfWeek]![mealType as keyof UIDailyMeal]!.push(food);
+        } else {
+          console.warn(`Skipping invalid meal type: ${food.meal_type}`);
+        }
       });
     });
 
@@ -514,10 +518,8 @@ requestRouter.get('/meal_plan/:id', async (req, res) => {
   }
 });
 
-requestRouter.get('/user/meal_plan', async (req, res) => {
+app.get('/api/user/meal_plan', async (req, res) => {
   const userId = await getUserIdFromCookies(req.cookies.token);
-
-  let returnArr: { meal_plan_id: number; is_private: boolean }[] = [];
 
   if (!userId) {
     return res.status(400).json({ error: 'Invalid User ID' });
@@ -526,36 +528,98 @@ requestRouter.get('/user/meal_plan', async (req, res) => {
   const query = `
     SELECT DISTINCT 
       mp.id AS meal_plan_id,
-      mp.is_private
+      mp.is_private,
+      mpi.day_of_week,
+      json_group_array(
+        json_object(
+          'name', df.name,
+          'meal_type', df.meal_type,
+          'calories', df.calories,
+          'carbs', df.carbs,
+          'fat', df.fat,
+          'protein', df.protein,
+          'sodium', df.sodium,
+          'sugar', df.sugar
+        )
+      ) AS daily_foods
     FROM meal_plans mp
-    JOIN meal_plan_items mpi ON mp.id = mpi.meal_plan_id
-    JOIN meals m ON mpi.meal_id = m.id
-    JOIN meal_items mi ON m.id = mi.meal_id
-    JOIN daily_food df ON mi.food_id = df.id
-    WHERE df.user_id = ?;
+    LEFT JOIN meal_plan_items mpi ON mp.id = mpi.meal_plan_id
+    LEFT JOIN daily_food df ON mpi.food_id = df.id  -- Join on food_id directly
+    WHERE df.user_id = ?
+    GROUP BY mp.id, mpi.day_of_week;
   `;
 
   try {
     const result = await db.all(query, [userId]);
 
     if (!result || result.length === 0) {
-      return res.json({ meal_plans: returnArr });
+      return res.json({ meal_plans: [] });
     }
-    console.log('result', result);
-    returnArr = result.map((row) => ({
-      meal_plan_id: row.meal_plan_id,
-      is_private: row.is_private === 1, // Convert to boolean for clarity
-    }));
-    return res.json({
-      meal_plans: returnArr,
+
+    const formattedMealPlans: {
+      meal_plan_id: number;
+      name: string;
+      is_private: boolean;
+      plan: Partial<UIFormattedMealPlan>
+    }[] = [];
+
+    const mealPlansMap = new Map<number, Partial<UIFormattedMealPlan>>();
+
+    result.forEach((row) => {
+      const mealPlanId = row.meal_plan_id;
+      const mealPlanName = row.meal_plan_name;
+      const isPrivate = row.is_private === 1;
+      const dayOfWeek = row.day_of_week.toLowerCase() as keyof UIFormattedMealPlan;
+
+      if (!mealPlansMap.has(mealPlanId)) {
+        mealPlansMap.set(mealPlanId, {});
+        formattedMealPlans.push({
+          meal_plan_id: mealPlanId,
+          name: mealPlanName,
+          is_private: isPrivate,
+          plan: mealPlansMap.get(mealPlanId)!,
+        });
+      }
+
+      const mealPlan = mealPlansMap.get(mealPlanId)!;
+
+      if (!mealPlan[dayOfWeek]) {
+        mealPlan[dayOfWeek] = {
+          breakfast: [],
+          lunch: [],
+          dinner: [],
+          snack: [],
+        };
+      }
+
+      const dailyFoods = row.daily_foods ? JSON.parse(row.daily_foods) : [];
+      dailyFoods.forEach((food: any) => {
+        let mealType = food.meal_type.startsWith("meal-plan-item-")
+          ? food.meal_type.replace("meal-plan-item-", "").toLowerCase()
+          : null;
+
+        const validMealTypes: (keyof UIDailyMeal)[] = ["breakfast", "lunch", "dinner", "snack"];
+
+        if (mealType && validMealTypes.includes(mealType as keyof UIDailyMeal)) {
+          if (!mealPlan[dayOfWeek]![mealType as keyof UIDailyMeal]) {
+            mealPlan[dayOfWeek]![mealType as keyof UIDailyMeal] = [];
+          }
+
+          (mealPlan[dayOfWeek]![mealType as keyof UIDailyMeal] as any[]).push(food);
+        } else {
+          console.warn(`Skipping invalid meal type: ${food.meal_type}`);
+        }
+      });
     });
+
+    return res.json({ meal_plans: formattedMealPlans });
   } catch (err: any) {
     console.error(err);
     return res.status(500).json({ error: err.toString() });
   }
 });
 
-requestRouter.get('/meals/:id', async (req, res) => {
+app.get('/api/meals/:id', async (req, res) => {
   // TODO: work on permissions
   // ! This route might not actually be valid... Made this just to test meals/inner joins
   let result: DBDailyFoodItem[];
@@ -616,14 +680,14 @@ app.get(
   }
 );
 
-requestRouter.get('/meal_plans', async (req, res) => {
+app.get('/api/meal_plans', async (req, res) => {
   let result;
   try {
     result = await db.all('SELECT * FROM meal_plans WHERE is_private = 0;');
 
     if (!result || result.length === 0) {
-      console.log('public meal plans found.');
-      return res.status(404).json({ error: 'No public meal plans found' });
+      console.log('No public meal plans found.');
+      return res.json({ result: [] });
     }
 
     return res.json({ result });
@@ -1092,12 +1156,196 @@ app.post('/api/daily_food', async (req: Request, res: Response) => {
   }
 });
 
+app.get('/api/daily_food/:id', async (req: Request, res: Response) => {
+  const user_id = await getUserIdFromCookies(req.cookies.token);
+  const dailyFoodId = parseInt(req.params.id, 10);
+
+  if (!user_id) {
+    return res.status(401).json({ error: 'Not authenticated' });
+  }
+
+  if (isNaN(dailyFoodId)) {
+    return res.status(400).json({ error: 'Invalid Daily Food ID' });
+  }
+
+  try {
+    const query = `
+      SELECT * FROM daily_food 
+      WHERE user_id = ? AND id = ?
+    `;
+    const result = await db.get(query, [user_id, dailyFoodId]);
+
+    if (!result) {
+      return res.status(404).json({ error: 'Daily food item not found' });
+    }
+
+    return res.json(result);
+  } catch (error) {
+    console.error('Error fetching daily food item:', error);
+    return res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
+app.post('/api/meals', async (req: Request, res: Response) => {
+  const user_id = await getUserIdFromCookies(req.cookies.token);
+  const { mealPlanName, foodItems } = req.body;
+
+  if (!mealPlanName || !foodItems || !Array.isArray(foodItems) || foodItems.length === 0) {
+    return res.status(400).json({ error: 'Meal name and food items are required' });
+  }
+
+  try {
+    const statement = await db.prepare(
+      'INSERT INTO meals (name, date, user_id) VALUES (?, ?, ?)'
+    );
+    const result = await statement.run(mealPlanName, new Date().toISOString(), user_id);
+    const meal_id = result.lastID;
+
+    for (const foodItem of foodItems) {
+      const food_id = foodItem.id;
+      const mealItemStatement = await db.prepare(
+        'INSERT INTO meal_items (meal_id, food_id) VALUES (?, ?)'
+      );
+      await mealItemStatement.run(meal_id, food_id);
+    }
+
+    return res.status(201).json({ message: 'Meal created successfully', meal_id });
+  } catch (error) {
+    console.error('Error creating meal:', error);
+    return res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
+app.get('/api/meals', async (req: Request, res: Response) => {
+  const user_id = await getUserIdFromCookies(req.cookies.token);
+
+  if (!user_id) {
+    return res.status(401).json({ error: 'Not authenticated' });
+  }
+
+  try {
+    const mealsQuery = `
+      SELECT m.id AS meal_id, m.name AS meal_name, m.date AS meal_date
+      FROM meals m
+      WHERE m.user_id = ?
+    `;
+    const meals = await db.all(mealsQuery, [user_id]);
+
+    if (meals.length === 0) {
+      return res.json({ meals: [] });
+    }
+
+    const mealsWithItems = await Promise.all(
+      meals.map(async (meal) => {
+        const mealItemsQuery = `
+          SELECT df.id AS food_id, df.name AS food_name, df.calories, df.carbs, df.fat, df.protein, df.sodium, df.sugar, df.date, df.quantity
+          FROM daily_food df
+          INNER JOIN meal_items mi ON df.id = mi.food_id
+          WHERE mi.meal_id = ?
+        `;
+        const foodItems = await db.all(mealItemsQuery, [meal.meal_id]);
+
+        const transformedFoodItems = foodItems.map((foodItem) => ({
+          id: foodItem.food_id,
+          name: foodItem.food_name,
+          quantity: foodItem.quantity,
+          calories: foodItem.calories,
+          carbs: foodItem.carbs,
+          fat: foodItem.fat,
+          protein: foodItem.protein,
+          sodium: foodItem.sodium,
+          sugar: foodItem.sugar,
+          date: foodItem.date
+        }));
+
+        return { ...meal, food_items: transformedFoodItems };
+      })
+    );
+
+    return res.json({ meals: mealsWithItems });
+  } catch (error) {
+    console.error('Error fetching meals:', error);
+    return res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
+app.post("/api/meal-plans", async (req, res) => {
+  const user_id = await getUserIdFromCookies(req.cookies.token);
+  const { name, is_private, meals } = req.body;
+
+  if (!user_id || !name || !meals) {
+    return res.status(400).json({ error: "Missing required fields" });
+  }
+
+  try {
+    const result = await db.run(
+      "INSERT INTO meal_plans (name, is_private) VALUES (?, ?)",
+      [name, is_private ? 1 : 0]
+    );
+    const mealPlanId = result.lastID;
+
+    for (const [day, mealTypes] of Object.entries(meals)) {
+      for (const [mealType, foods] of Object.entries(mealTypes as { [key: string]: any })) {
+        for (const food of foods) {
+          const foodResult = await db.run(
+            `INSERT INTO daily_food (user_id, meal_type, name, quantity, calories, carbs, fat, protein, sodium, sugar, date)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, date('now'))`,
+            [
+              user_id, `meal-plan-item-${mealType}`, food.name, food.quantity, food.calories,
+              food.carbs, food.fat, food.protein, food.sodium, food.sugar
+            ]
+          );
+          const foodId = foodResult.lastID;
+
+          await db.run(
+            "INSERT INTO meal_plan_items (meal_plan_id, food_id, day_of_week) VALUES (?, ?, ?)",
+            [mealPlanId, foodId, day]
+          );
+        }
+      }
+    }
+
+    res.status(201).json({ message: "Meal plan created successfully", mealPlanId });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+
+app.delete('/api/meals/:meal_id', async (req, res) => {
+  const user_id = await getUserIdFromCookies(req.cookies.token);
+  const meal_id = parseInt(req.params.meal_id, 10);
+
+  if (!user_id) {
+    return res.status(401).json({ error: 'Not authenticated' });
+  }
+
+  if (isNaN(meal_id)) {
+    return res.status(400).json({ error: 'Invalid meal ID' });
+  }
+
+  try {
+    const meal = await db.get('SELECT * FROM meals WHERE id = ? AND user_id = ?', [meal_id, user_id]);
+
+    if (!meal) {
+      return res.status(404).json({ error: 'Meal not found or does not belong to the user' });
+    }
+
+    await db.run('DELETE FROM meals WHERE id = ?', [meal_id]);
+
+    return res.status(200).json({ message: 'Meal deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting meal:', error);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // run server
 let port = 3000;
 let host = 'localhost';
 let protocol = 'http';
 
-app.use('/api', requestRouter);
 
 app.listen(port, host, () => {
   console.log(`${protocol}://${host}:${port}`);

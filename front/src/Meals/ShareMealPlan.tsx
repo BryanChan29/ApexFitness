@@ -1,5 +1,5 @@
 import { useNavigate, useParams } from 'react-router-dom';
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Box, Button, CircularProgress, Typography } from '@mui/material';
 import MealPlan from './MealPlan'; // Import your MealPlan component
 import { UIFormattedMealPlan } from '@apex/shared';
@@ -75,6 +75,7 @@ function ShareMealPlan() {
         variant="contained"
         onClick={() => navigate('../../meal-plans')}
         style={{ justifyContent: 'left' }}
+        className='primary-button'
       >
         Back to Search
       </Button>

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Card,
   CardContent,
@@ -63,11 +63,19 @@ const MealPlanSearch = () => {
           margin="normal"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
+          slotProps={{
+            input: {
+              style: {
+                backgroundColor: 'white',
+                borderRadius: '30px',
+              },
+            },
+          }}
         />
         <Grid container spacing={2}>
           {filteredMealPlans.map((plan) => (
             <Grid item xs={12} sm={6} md={4} key={plan.id}>
-              <Card>
+              <Card style={{ borderRadius: '20px' }}>
                 <CardActionArea
                   onClick={() => {
                     navigate(`/share/meal-plan/${plan.id}`);

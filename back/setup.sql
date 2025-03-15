@@ -32,8 +32,10 @@ CREATE TABLE daily_food (
 -- Meals Table
 CREATE TABLE meals ( 
     id INTEGER PRIMARY KEY AUTOINCREMENT, 
-    date TEXT NOT NULL,  -- Use TEXT for dates in SQLite
-    saved_meal BOOLEAN NOT NULL DEFAULT 0
+    name VARCHAR(50) NOT NULL,
+    date TEXT NOT NULL,
+    user_id VARCHAR(50) NOT NULL,
+    FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 -- Meal Items Join Table (for list of food IDs in a meal)
@@ -55,11 +57,13 @@ CREATE TABLE meal_plans (
 -- Meal Plan Items Join Table (for list of meal IDs in a meal plan)
 CREATE TABLE meal_plan_items (
     meal_plan_id INTEGER NOT NULL,
-    meal_id INTEGER NOT NULL,
+    meal_id INTEGER,
+    food_id INTEGER,
     day_of_week VARCHAR(15) NOT NULL,
     PRIMARY KEY (meal_plan_id, meal_id, day_of_week),
     FOREIGN KEY (meal_plan_id) REFERENCES meal_plans(id) ON DELETE CASCADE,
     FOREIGN KEY (meal_id) REFERENCES meals(id) ON DELETE CASCADE
+    FOREIGN KEY (food_id) REFERENCES daily_food(id) ON DELETE CASCADE
 );
 
 -- Workout Table
