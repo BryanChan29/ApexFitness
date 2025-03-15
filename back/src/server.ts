@@ -442,30 +442,28 @@ requestRouter.get('/meal_plan/:id', async (req, res) => {
   }
 
   const query = `
-    SELECT 
-        mpi.day_of_week,
-        mp.name,
-        df.user_id,
-        mp.is_private,
-        json_group_array(
-            json_object(
-                'name', df.name,
-                'meal_type', df.meal_type,
-                'calories', df.calories,
-                'carbs', df.carbs,
-                'fat', df.fat,
-                'protein', df.protein,
-                'sodium', df.sodium,
-                'sugar', df.sugar
-            )
-        ) AS daily_foods
-    FROM meal_plans mp
-    LEFT JOIN meal_plan_items mpi ON mp.id = mpi.meal_plan_id
-    LEFT JOIN meals m ON mpi.meal_id = m.id
-    LEFT JOIN meal_items mi ON m.id = mi.meal_id
-    LEFT JOIN daily_food df ON mi.food_id = df.id
-    WHERE mp.id = ?
-    GROUP BY mpi.day_of_week;
+      SELECT 
+          mpi.day_of_week,
+          mp.name AS meal_plan_name,
+          df.user_id,
+          mp.is_private,
+          json_group_array(
+              json_object(
+                  'name', df.name,
+                  'meal_type', df.meal_type,
+                  'calories', df.calories,
+                  'carbs', df.carbs,
+                  'fat', df.fat,
+                  'protein', df.protein,
+                  'sodium', df.sodium,
+                  'sugar', df.sugar
+              )
+          ) AS daily_foods
+      FROM meal_plans mp
+      LEFT JOIN meal_plan_items mpi ON mp.id = mpi.meal_plan_id
+      LEFT JOIN daily_food df ON mpi.food_id = df.id  -- This is the missing link
+      WHERE mp.id = ?
+      GROUP BY mpi.day_of_week;
   `;
 
   try {
@@ -485,9 +483,8 @@ requestRouter.get('/meal_plan/:id', async (req, res) => {
     const mealPlanName = result[0].name;
 
     result.forEach((row) => {
-      const dayOfWeek =
-        row.day_of_week.toLowerCase() as keyof UIFormattedMealPlan; // Use day_of_week directly
-
+      const dayOfWeek = row.day_of_week.toLowerCase() as keyof UIFormattedMealPlan;
+    
       if (!formattedMealPlan[dayOfWeek]) {
         formattedMealPlan[dayOfWeek] = {
           breakfast: [],
@@ -496,16 +493,25 @@ requestRouter.get('/meal_plan/:id', async (req, res) => {
           snack: [],
         };
       }
-
-      const dailyFoods: UIFormattedDailyFoodItem[] = row.daily_foods
-        ? JSON.parse(row.daily_foods)
-        : [];
-
-      dailyFoods.forEach((food) => {
-        const mealType = food.meal_type.toLowerCase() as keyof UIDailyMeal;
-        formattedMealPlan[dayOfWeek]![mealType].push(food);
+    
+      const dailyFoods = row.daily_foods ? JSON.parse(row.daily_foods) : [];
+      dailyFoods.forEach((food: any) => {
+        let mealType = food.meal_type.startsWith("meal-plan-item-") 
+          ? food.meal_type.replace("meal-plan-item-", "").toLowerCase() 
+          : null;
+    
+        const validMealTypes: (keyof UIDailyMeal)[] = ["breakfast", "lunch", "dinner", "snack"];
+    
+        if (mealType && validMealTypes.includes(mealType as keyof UIDailyMeal)) {
+          if (!formattedMealPlan[dayOfWeek]![mealType as keyof UIDailyMeal]) {
+            formattedMealPlan[dayOfWeek]![mealType as keyof UIDailyMeal] = [];
+          }
+          formattedMealPlan[dayOfWeek]![mealType as keyof UIDailyMeal]!.push(food);
+        } else {
+          console.warn(`Skipping invalid meal type: ${food.meal_type}`);
+        }
       });
-    });
+    });    
 
     return res.json({ name: mealPlanName, result: formattedMealPlan });
   } catch (err: any) {
@@ -517,8 +523,6 @@ requestRouter.get('/meal_plan/:id', async (req, res) => {
 requestRouter.get('/user/meal_plan', async (req, res) => {
   const userId = await getUserIdFromCookies(req.cookies.token);
 
-  let returnArr: { meal_plan_id: number; is_private: boolean }[] = [];
-
   if (!userId) {
     return res.status(400).json({ error: 'Invalid User ID' });
   }
@@ -526,29 +530,91 @@ requestRouter.get('/user/meal_plan', async (req, res) => {
   const query = `
     SELECT DISTINCT 
       mp.id AS meal_plan_id,
-      mp.is_private
+      mp.is_private,
+      mpi.day_of_week,
+      json_group_array(
+        json_object(
+          'name', df.name,
+          'meal_type', df.meal_type,
+          'calories', df.calories,
+          'carbs', df.carbs,
+          'fat', df.fat,
+          'protein', df.protein,
+          'sodium', df.sodium,
+          'sugar', df.sugar
+        )
+      ) AS daily_foods
     FROM meal_plans mp
-    JOIN meal_plan_items mpi ON mp.id = mpi.meal_plan_id
-    JOIN meals m ON mpi.meal_id = m.id
-    JOIN meal_items mi ON m.id = mi.meal_id
-    JOIN daily_food df ON mi.food_id = df.id
-    WHERE df.user_id = ?;
+    LEFT JOIN meal_plan_items mpi ON mp.id = mpi.meal_plan_id
+    LEFT JOIN daily_food df ON mpi.food_id = df.id  -- Join on food_id directly
+    WHERE df.user_id = ?
+    GROUP BY mp.id, mpi.day_of_week;
   `;
 
   try {
     const result = await db.all(query, [userId]);
 
     if (!result || result.length === 0) {
-      return res.json({ meal_plans: returnArr });
+      return res.json({ meal_plans: [] });
     }
-    console.log('result', result);
-    returnArr = result.map((row) => ({
-      meal_plan_id: row.meal_plan_id,
-      is_private: row.is_private === 1, // Convert to boolean for clarity
-    }));
-    return res.json({
-      meal_plans: returnArr,
+
+    const formattedMealPlans: { 
+      meal_plan_id: number; 
+      name: string; 
+      is_private: boolean; 
+      plan: Partial<UIFormattedMealPlan> 
+    }[] = [];
+
+    const mealPlansMap = new Map<number, Partial<UIFormattedMealPlan>>();
+
+    result.forEach((row) => {
+      const mealPlanId = row.meal_plan_id;
+      const mealPlanName = row.meal_plan_name;
+      const isPrivate = row.is_private === 1;
+      const dayOfWeek = row.day_of_week.toLowerCase() as keyof UIFormattedMealPlan;
+
+      if (!mealPlansMap.has(mealPlanId)) {
+        mealPlansMap.set(mealPlanId, {});
+        formattedMealPlans.push({
+          meal_plan_id: mealPlanId,
+          name: mealPlanName,
+          is_private: isPrivate,
+          plan: mealPlansMap.get(mealPlanId)!,
+        });
+      }
+
+      const mealPlan = mealPlansMap.get(mealPlanId)!;
+
+      if (!mealPlan[dayOfWeek]) {
+        mealPlan[dayOfWeek] = {
+          breakfast: [],
+          lunch: [],
+          dinner: [],
+          snack: [],
+        };
+      }
+
+      const dailyFoods = row.daily_foods ? JSON.parse(row.daily_foods) : [];
+      dailyFoods.forEach((food: any) => {
+        let mealType = food.meal_type.startsWith("meal-plan-item-") 
+          ? food.meal_type.replace("meal-plan-item-", "").toLowerCase() 
+          : null;
+
+        const validMealTypes: (keyof UIDailyMeal)[] = ["breakfast", "lunch", "dinner", "snack"];
+
+        if (mealType && validMealTypes.includes(mealType as keyof UIDailyMeal)) {
+          if (!mealPlan[dayOfWeek]![mealType as keyof UIDailyMeal]) {
+            mealPlan[dayOfWeek]![mealType as keyof UIDailyMeal] = [];
+          }
+          
+          (mealPlan[dayOfWeek]![mealType as keyof UIDailyMeal] as any[]).push(food);
+        } else {
+          console.warn(`Skipping invalid meal type: ${food.meal_type}`);
+        }
+      });
     });
+
+    return res.json({ meal_plans: formattedMealPlans });
   } catch (err: any) {
     console.error(err);
     return res.status(500).json({ error: err.toString() });
@@ -616,14 +682,14 @@ app.get(
   }
 );
 
-requestRouter.get('/meal_plans', async (req, res) => {
+app.get('/api/meal_plans', async (req, res) => {
   let result;
   try {
     result = await db.all('SELECT * FROM meal_plans WHERE is_private = 0;');
 
     if (!result || result.length === 0) {
-      console.log('public meal plans found.');
-      return res.status(404).json({ error: 'No public meal plans found' });
+      console.log('No public meal plans found.');
+      return res.json({ result: [] });
     }
 
     return res.json({ result });
@@ -1143,44 +1209,43 @@ app.get('/api/meals', async (req: Request, res: Response) => {
 app.post("/api/meal-plans", async (req, res) => {
   const user_id = await getUserIdFromCookies(req.cookies.token);
   const { name, is_private, meals } = req.body;
-  
-  if (!user_id || !name || !meals) {
-      return res.status(400).json({ error: "Missing required fields" });
-  }
-  
-  try {
-      // Insert meal plan
-      const result = await db.run(
-          "INSERT INTO meal_plans (name, is_private) VALUES (?, ?)",
-          [name, is_private ? 1 : 0]
-      );
-      const mealPlanId = result.lastID;
-      
-      for (const [day, mealTypes] of Object.entries(meals)) {
-          for (const foods of Object.values(mealTypes as { [key: string]: any })) {
-              for (const food of foods) {
-                  const foodResult = await db.run(
-                      `INSERT INTO daily_food (user_id, meal_type, name, quantity, calories, carbs, fat, protein, sodium, sugar, date)
-                       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, date('now'))`,
-                      [
-                          user_id, "meal-plan-item", food.name, food.quantity, food.calories,
-                          food.carbs, food.fat, food.protein, food.sodium, food.sugar
-                      ]
-                  );
-                  const foodId = foodResult.lastID;
 
-                  await db.run(
-                      "INSERT INTO meal_plan_items (meal_plan_id, food_id, day_of_week) VALUES (?, ?, ?)",
-                      [mealPlanId, foodId, day]
-                  );
-              }
-          }
+  if (!user_id || !name || !meals) {
+    return res.status(400).json({ error: "Missing required fields" });
+  }
+
+  try {
+    const result = await db.run(
+      "INSERT INTO meal_plans (name, is_private) VALUES (?, ?)",
+      [name, is_private ? 1 : 0]
+    );
+    const mealPlanId = result.lastID;
+
+    for (const [day, mealTypes] of Object.entries(meals)) {
+      for (const [mealType, foods] of Object.entries(mealTypes as { [key: string]: any })) {
+        for (const food of foods) {
+            const foodResult = await db.run(
+            `INSERT INTO daily_food (user_id, meal_type, name, quantity, calories, carbs, fat, protein, sodium, sugar, date)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, date('now'))`,
+            [
+              user_id, `meal-plan-item-${mealType}`, food.name, food.quantity, food.calories,
+              food.carbs, food.fat, food.protein, food.sodium, food.sugar
+            ]
+            );
+          const foodId = foodResult.lastID;
+
+          await db.run(
+            "INSERT INTO meal_plan_items (meal_plan_id, food_id, day_of_week) VALUES (?, ?, ?)",
+            [mealPlanId, foodId, day]
+          );
+        }
       }
-      
-      res.status(201).json({ message: "Meal plan created successfully", mealPlanId });
+    }
+
+    res.status(201).json({ message: "Meal plan created successfully", mealPlanId });
   } catch (error) {
-      console.error(error);
-      res.status(500).json({ error: "Internal server error" });
+    console.error(error);
+    res.status(500).json({ error: "Internal server error" });
   }
 });
 

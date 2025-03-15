@@ -54,7 +54,7 @@ function Sidebar() {
           component="img"
           sx={{ height: 85, width: 85 }}
           alt="Logo"
-          src="/public/logo.png"
+          src="/logo.png"
         />
       </Toolbar>
 
