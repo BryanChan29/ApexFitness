@@ -113,7 +113,7 @@ function NewMealPlan() {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to save meal plan');
+        throw new Error('Failed to save meal plan, ensure atleast one meal is added and a name is set');
       }
 
       const result = await response.json();

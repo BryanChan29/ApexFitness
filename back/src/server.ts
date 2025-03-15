@@ -35,7 +35,6 @@ const BURN_API_URL = 'https://api.api-ninjas.com/v1/caloriesburned';
 
 let app = express();
 app.use(express.json());
-const requestRouter = express.Router();
 
 const __dirname = url.fileURLToPath(new URL('..', import.meta.url));
 const dbfile = `${__dirname}database.db`;
@@ -386,7 +385,6 @@ app.put('/api/meal_plan', async (req, res) => {
       return 'Meal Plan ID, Name and isPrivate values are required';
     }
     if (!id) return 'Meal Plan ID required';
-    if (!name) return 'Meal Plan Name required';
     if (isPrivate === undefined || isPrivate === null)
       return 'isPrivate required';
     return null;
@@ -394,6 +392,7 @@ app.put('/api/meal_plan', async (req, res) => {
 
   const validationError = validateRequest();
   if (validationError) {
+    console.log(validationError);
     return res.status(400).json({ error: validationError });
   }
 
@@ -412,11 +411,11 @@ app.put('/api/meal_plan', async (req, res) => {
     // Prepare the update query
     const statement = await db.prepare(
       `UPDATE meal_plans 
-       SET name = ?, is_private = ? 
+       SET is_private = ? 
        WHERE id = ?`
     );
 
-    await statement.run(name, isPrivate, id);
+    await statement.run(isPrivate, id);
 
     return res
       .status(200)
@@ -427,7 +426,7 @@ app.put('/api/meal_plan', async (req, res) => {
   }
 });
 
-requestRouter.get('/meal_plan/:id', async (req, res) => {
+app.get('/api/meal_plan/:id', async (req, res) => {
   let result: {
     day_of_week: string;
     daily_foods: string;
@@ -519,7 +518,7 @@ requestRouter.get('/meal_plan/:id', async (req, res) => {
   }
 });
 
-requestRouter.get('/user/meal_plan', async (req, res) => {
+app.get('/api/user/meal_plan', async (req, res) => {
   const userId = await getUserIdFromCookies(req.cookies.token);
 
   if (!userId) {
@@ -620,7 +619,7 @@ requestRouter.get('/user/meal_plan', async (req, res) => {
   }
 });
 
-requestRouter.get('/meals/:id', async (req, res) => {
+app.get('/api/meals/:id', async (req, res) => {
   // TODO: work on permissions
   // ! This route might not actually be valid... Made this just to test meals/inner joins
   let result: DBDailyFoodItem[];
@@ -1282,7 +1281,6 @@ let port = 3000;
 let host = 'localhost';
 let protocol = 'http';
 
-app.use('/api', requestRouter);
 
 app.listen(port, host, () => {
   console.log(`${protocol}://${host}:${port}`);

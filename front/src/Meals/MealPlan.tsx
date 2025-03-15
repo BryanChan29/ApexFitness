@@ -54,6 +54,7 @@ function MealPlan({
       body: JSON.stringify(payload),
     })
       .then((response) => {
+        console.log(response);
         if (!response.ok) {
           throw new Error('Failed to update meal plan visibility');
         }
@@ -98,12 +99,12 @@ function MealPlan({
       </Typography>
       <TableContainer
         component={Paper}
-        sx={{ borderRadius: '20px', overflow: 'hidden' }}
+        sx={{ borderRadius: '20px', overflow: 'hidden', width: '80%', margin: 'auto' }}
       >
         <Table>
           <TableHead>
             <TableRow>
-              <TableCell>
+              <TableCell align="center">
                 <strong>Meal Type</strong>
               </TableCell>
               {days.map((day) => (
@@ -116,7 +117,7 @@ function MealPlan({
           <TableBody>
             {formattedMeals.map((row) => (
               <TableRow key={row.mealType}>
-                <TableCell>
+                <TableCell align="center">
                   <strong>
                     {row.mealType.charAt(0).toUpperCase() +
                       row.mealType.slice(1)}
@@ -126,11 +127,10 @@ function MealPlan({
                   <TableCell key={index} align="center">
                     {meals.length > 0 ? (
                       <List
-                        style={{ paddingLeft: '15px', margin: 0 }}
-                        sx={{ listStyleType: 'disc' }}
+                        sx={{ listStyleType: 'disc', listStylePosition: 'inside', textAlign: 'center' }}
                       >
                         {meals.map((meal, idx) => (
-                          <ListItem key={idx} sx={{ display: 'list-item' }}>
+                          <ListItem key={idx} sx={{ display: 'list-item', textAlign: 'center' }}>
                             {meal}
                           </ListItem>
                         ))}
@@ -145,7 +145,7 @@ function MealPlan({
           </TableBody>
         </Table>
         {showToggle && (
-          <div>
+          <div style={{ textAlign: 'center', marginTop: '20px' }}>
             <Typography variant="h6">Public Visibility</Typography>
             <Switch
               checked={isPublic}

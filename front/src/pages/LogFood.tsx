@@ -268,6 +268,42 @@ const LogFood = ({ onAddMealItem }: { onAddMealItem?: (foodItem: any) => void })
     }
   };
 
+  const handleLogMeal = async (meal: Meal) => {
+    if (!meal || !meal.food_items) return;
+  
+    const summedValues = meal.food_items.reduce(
+      (acc, item) => ({
+        calories: acc.calories + item.calories,
+        carbs: acc.carbs + item.carbs,
+        fat: acc.fat + item.fat,
+        protein: acc.protein + item.protein,
+        sodium: acc.sodium + (item.sodium || 0),
+        sugar: acc.sugar + (item.sugar || 0),
+      }),
+      { calories: 0, carbs: 0, fat: 0, protein: 0, sodium: 0, sugar: 0 }
+    );
+  
+    const payload = {
+      meal_type: mealType,
+      name: meal.meal_name,
+      date: new Date().toISOString().split('T')[0],
+      quantity: "1 serving",
+      ...summedValues,
+    };
+  
+    try {
+      const response = await axios.post('/api/daily_food', payload);
+      console.log('Meal logged successfully:', response.data);
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        console.error('Error logging meal:', error.response?.data || error.message);
+      } else {
+        console.error('Error logging meal:', error);
+      }
+    }
+  };
+  
+
   useEffect(() => {
     if (!foodDetail) return;
 
@@ -618,7 +654,7 @@ const LogFood = ({ onAddMealItem }: { onAddMealItem?: (foodItem: any) => void })
               <Box key={meal.meal_id} sx={{ width: '100%', mb: 4, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <NutritionTable foodData={meal.food_items} summation={true} mealName={meal.meal_name} />
                 <Box sx={{ display: 'flex', flexDirection: 'column', ml: 2 }}>
-                  <span className="material-symbols-rounded" style={{ fontSize: "40px", cursor: "pointer", marginBottom: "8px" }}>
+                  <span className="material-symbols-rounded" style={{ fontSize: "40px", cursor: "pointer", marginBottom: "8px"}} onClick={() => handleLogMeal(meal)}>
                     add_circle
                   </span>
                   <span className="material-symbols-rounded" style={{ fontSize: "40px", cursor: "pointer" }} onClick={() => handleDeleteMeal(meal.meal_id)}>
