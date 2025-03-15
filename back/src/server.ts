@@ -27,9 +27,7 @@ if (!process.env.FATSECRET_CLIENT_SECRET || !process.env.FATSECRET_CLIENT_ID) {
 }
 
 if (!process.env.BURN_API_KEY) {
-  throw new Error(
-    'BURN_API_KEY is not defined in .env file'
-  );
+  throw new Error('BURN_API_KEY is not defined in .env file');
 }
 const BURN_API_URL = 'https://api.api-ninjas.com/v1/caloriesburned';
 
@@ -442,7 +440,7 @@ app.get('/api/meal_plan/:id', async (req, res) => {
   const query = `
       SELECT 
           mpi.day_of_week,
-          mp.name AS meal_plan_name,
+          mp.name AS name,
           df.user_id,
           mp.is_private,
           json_group_array(
@@ -481,7 +479,8 @@ app.get('/api/meal_plan/:id', async (req, res) => {
     const mealPlanName = result[0].name;
 
     result.forEach((row) => {
-      const dayOfWeek = row.day_of_week.toLowerCase() as keyof UIFormattedMealPlan;
+      const dayOfWeek =
+        row.day_of_week.toLowerCase() as keyof UIFormattedMealPlan;
 
       if (!formattedMealPlan[dayOfWeek]) {
         formattedMealPlan[dayOfWeek] = {
@@ -494,17 +493,27 @@ app.get('/api/meal_plan/:id', async (req, res) => {
 
       const dailyFoods = row.daily_foods ? JSON.parse(row.daily_foods) : [];
       dailyFoods.forEach((food: any) => {
-        let mealType = food.meal_type.startsWith("meal-plan-item-")
-          ? food.meal_type.replace("meal-plan-item-", "").toLowerCase()
+        let mealType = food.meal_type.startsWith('meal-plan-item-')
+          ? food.meal_type.replace('meal-plan-item-', '').toLowerCase()
           : null;
 
-        const validMealTypes: (keyof UIDailyMeal)[] = ["breakfast", "lunch", "dinner", "snack"];
+        const validMealTypes: (keyof UIDailyMeal)[] = [
+          'breakfast',
+          'lunch',
+          'dinner',
+          'snack',
+        ];
 
-        if (mealType && validMealTypes.includes(mealType as keyof UIDailyMeal)) {
+        if (
+          mealType &&
+          validMealTypes.includes(mealType as keyof UIDailyMeal)
+        ) {
           if (!formattedMealPlan[dayOfWeek]![mealType as keyof UIDailyMeal]) {
             formattedMealPlan[dayOfWeek]![mealType as keyof UIDailyMeal] = [];
           }
-          formattedMealPlan[dayOfWeek]![mealType as keyof UIDailyMeal]!.push(food);
+          formattedMealPlan[dayOfWeek]![mealType as keyof UIDailyMeal]!.push(
+            food
+          );
         } else {
           console.warn(`Skipping invalid meal type: ${food.meal_type}`);
         }
@@ -560,7 +569,7 @@ app.get('/api/user/meal_plan', async (req, res) => {
       meal_plan_id: number;
       name: string;
       is_private: boolean;
-      plan: Partial<UIFormattedMealPlan>
+      plan: Partial<UIFormattedMealPlan>;
     }[] = [];
 
     const mealPlansMap = new Map<number, Partial<UIFormattedMealPlan>>();
@@ -569,7 +578,8 @@ app.get('/api/user/meal_plan', async (req, res) => {
       const mealPlanId = row.meal_plan_id;
       const mealPlanName = row.meal_plan_name;
       const isPrivate = row.is_private === 1;
-      const dayOfWeek = row.day_of_week.toLowerCase() as keyof UIFormattedMealPlan;
+      const dayOfWeek =
+        row.day_of_week.toLowerCase() as keyof UIFormattedMealPlan;
 
       if (!mealPlansMap.has(mealPlanId)) {
         mealPlansMap.set(mealPlanId, {});
@@ -594,18 +604,28 @@ app.get('/api/user/meal_plan', async (req, res) => {
 
       const dailyFoods = row.daily_foods ? JSON.parse(row.daily_foods) : [];
       dailyFoods.forEach((food: any) => {
-        let mealType = food.meal_type.startsWith("meal-plan-item-")
-          ? food.meal_type.replace("meal-plan-item-", "").toLowerCase()
+        let mealType = food.meal_type.startsWith('meal-plan-item-')
+          ? food.meal_type.replace('meal-plan-item-', '').toLowerCase()
           : null;
 
-        const validMealTypes: (keyof UIDailyMeal)[] = ["breakfast", "lunch", "dinner", "snack"];
+        const validMealTypes: (keyof UIDailyMeal)[] = [
+          'breakfast',
+          'lunch',
+          'dinner',
+          'snack',
+        ];
 
-        if (mealType && validMealTypes.includes(mealType as keyof UIDailyMeal)) {
+        if (
+          mealType &&
+          validMealTypes.includes(mealType as keyof UIDailyMeal)
+        ) {
           if (!mealPlan[dayOfWeek]![mealType as keyof UIDailyMeal]) {
             mealPlan[dayOfWeek]![mealType as keyof UIDailyMeal] = [];
           }
 
-          (mealPlan[dayOfWeek]![mealType as keyof UIDailyMeal] as any[]).push(food);
+          (mealPlan[dayOfWeek]![mealType as keyof UIDailyMeal] as any[]).push(
+            food
+          );
         } else {
           console.warn(`Skipping invalid meal type: ${food.meal_type}`);
         }
@@ -774,7 +794,8 @@ app.patch('/api/user/metrics', async (req: Request, res: Response) => {
     }
 
     // Extract only the body metrics from the request body
-    const { current_weight, goal_weight, height, age, gender, activity_level } = req.body;
+    const { current_weight, goal_weight, height, age, gender, activity_level } =
+      req.body;
 
     // Update the user record with new metrics, preserving fields that are not provided
     await db.run(
@@ -841,7 +862,6 @@ app.patch('/api/user/metrics', async (req: Request, res: Response) => {
   }
 });
 
-
 //WEIGHT HISTORY FOR PROGRESS
 // GET endpoint for retrieving user weight history
 app.get('/api/weight_history', async (req: Request, res: Response) => {
@@ -856,7 +876,9 @@ app.get('/api/weight_history', async (req: Request, res: Response) => {
 
   try {
     // Get the user record by email to retrieve their user_id
-    const user = await db.get('SELECT * FROM users WHERE email = ?', [userEmail]);
+    const user = await db.get('SELECT * FROM users WHERE email = ?', [
+      userEmail,
+    ]);
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
@@ -1054,7 +1076,6 @@ app.get('/api/calories-burned', async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Activity parameter is required' });
     }
 
-
     // Actual API call
     const api_url = `${BURN_API_URL}?activity=${encodeURIComponent(activity)}`;
 
@@ -1190,15 +1211,26 @@ app.post('/api/meals', async (req: Request, res: Response) => {
   const user_id = await getUserIdFromCookies(req.cookies.token);
   const { mealPlanName, foodItems } = req.body;
 
-  if (!mealPlanName || !foodItems || !Array.isArray(foodItems) || foodItems.length === 0) {
-    return res.status(400).json({ error: 'Meal name and food items are required' });
+  if (
+    !mealPlanName ||
+    !foodItems ||
+    !Array.isArray(foodItems) ||
+    foodItems.length === 0
+  ) {
+    return res
+      .status(400)
+      .json({ error: 'Meal name and food items are required' });
   }
 
   try {
     const statement = await db.prepare(
       'INSERT INTO meals (name, date, user_id) VALUES (?, ?, ?)'
     );
-    const result = await statement.run(mealPlanName, new Date().toISOString(), user_id);
+    const result = await statement.run(
+      mealPlanName,
+      new Date().toISOString(),
+      user_id
+    );
     const meal_id = result.lastID;
 
     for (const foodItem of foodItems) {
@@ -1209,7 +1241,9 @@ app.post('/api/meals', async (req: Request, res: Response) => {
       await mealItemStatement.run(meal_id, food_id);
     }
 
-    return res.status(201).json({ message: 'Meal created successfully', meal_id });
+    return res
+      .status(201)
+      .json({ message: 'Meal created successfully', meal_id });
   } catch (error) {
     console.error('Error creating meal:', error);
     return res.status(500).json({ error: 'Internal Server Error' });
@@ -1255,7 +1289,7 @@ app.get('/api/meals', async (req: Request, res: Response) => {
           protein: foodItem.protein,
           sodium: foodItem.sodium,
           sugar: foodItem.sugar,
-          date: foodItem.date
+          date: foodItem.date,
         }));
 
         return { ...meal, food_items: transformedFoodItems };
@@ -1269,49 +1303,60 @@ app.get('/api/meals', async (req: Request, res: Response) => {
   }
 });
 
-app.post("/api/meal-plans", async (req, res) => {
+app.post('/api/meal-plans', async (req, res) => {
   const user_id = await getUserIdFromCookies(req.cookies.token);
   const { name, is_private, meals } = req.body;
 
   if (!user_id || !name || !meals) {
-    return res.status(400).json({ error: "Missing required fields" });
+    return res.status(400).json({ error: 'Missing required fields' });
   }
 
   try {
     const result = await db.run(
-      "INSERT INTO meal_plans (name, is_private) VALUES (?, ?)",
+      'INSERT INTO meal_plans (name, is_private) VALUES (?, ?)',
       [name, is_private ? 1 : 0]
     );
     const mealPlanId = result.lastID;
 
     for (const [day, mealTypes] of Object.entries(meals)) {
-      for (const [mealType, foods] of Object.entries(mealTypes as { [key: string]: any })) {
+      for (const [mealType, foods] of Object.entries(
+        mealTypes as { [key: string]: any }
+      )) {
         for (const food of foods) {
           const foodResult = await db.run(
             `INSERT INTO daily_food (user_id, meal_type, name, quantity, calories, carbs, fat, protein, sodium, sugar, date)
                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, date('now'))`,
             [
-              user_id, `meal-plan-item-${mealType}`, food.name, food.quantity, food.calories,
-              food.carbs, food.fat, food.protein, food.sodium, food.sugar
+              user_id,
+              `meal-plan-item-${mealType}`,
+              food.name,
+              food.quantity,
+              food.calories,
+              food.carbs,
+              food.fat,
+              food.protein,
+              food.sodium,
+              food.sugar,
             ]
           );
           const foodId = foodResult.lastID;
 
           await db.run(
-            "INSERT INTO meal_plan_items (meal_plan_id, food_id, day_of_week) VALUES (?, ?, ?)",
+            'INSERT INTO meal_plan_items (meal_plan_id, food_id, day_of_week) VALUES (?, ?, ?)',
             [mealPlanId, foodId, day]
           );
         }
       }
     }
 
-    res.status(201).json({ message: "Meal plan created successfully", mealPlanId });
+    res
+      .status(201)
+      .json({ message: 'Meal plan created successfully', mealPlanId });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Internal server error" });
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
-
 
 app.delete('/api/meals/:meal_id', async (req, res) => {
   const user_id = await getUserIdFromCookies(req.cookies.token);
@@ -1326,10 +1371,15 @@ app.delete('/api/meals/:meal_id', async (req, res) => {
   }
 
   try {
-    const meal = await db.get('SELECT * FROM meals WHERE id = ? AND user_id = ?', [meal_id, user_id]);
+    const meal = await db.get(
+      'SELECT * FROM meals WHERE id = ? AND user_id = ?',
+      [meal_id, user_id]
+    );
 
     if (!meal) {
-      return res.status(404).json({ error: 'Meal not found or does not belong to the user' });
+      return res
+        .status(404)
+        .json({ error: 'Meal not found or does not belong to the user' });
     }
 
     await db.run('DELETE FROM meals WHERE id = ?', [meal_id]);
@@ -1345,7 +1395,6 @@ app.delete('/api/meals/:meal_id', async (req, res) => {
 let port = 3000;
 let host = 'localhost';
 let protocol = 'http';
-
 
 app.listen(port, host, () => {
   console.log(`${protocol}://${host}:${port}`);
