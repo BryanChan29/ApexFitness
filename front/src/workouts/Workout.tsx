@@ -83,7 +83,7 @@ const WorkoutPage: React.FC = () => {
   const handleCloseNameModal = () => setOpenNameModal(false);
   const handleOpenUserWorkoutsModal = () => setOpenUserWorkoutsModal(true);
   const handleCloseUserWorkoutsModal = () => setOpenUserWorkoutsModal(false);
-  
+
 
   const handleAddCardio = () => {
     if (selectedSearchResult) {
@@ -378,7 +378,7 @@ const WorkoutPage: React.FC = () => {
       <Typography variant="h4" gutterBottom sx={{ mt: 4 }}>Strength Training Workouts</Typography>
       <Grid container spacing={3}>
         <Grid item xs={12}>
-          <Paper sx={{ p: 2, borderRadius: 5  }}>
+          <Paper sx={{ p: 2, borderRadius: 5 }}>
             <TableContainer component={Paper}>
               <Table>
                 <TableHead>
@@ -402,12 +402,12 @@ const WorkoutPage: React.FC = () => {
               </Table>
             </TableContainer>
             <Box sx={{ mt: 2 }}>
-            <Button variant="contained" color="primary" onClick={handleOpenStrengthModal} sx={{ ml: 2}} className='primary-button'>
-              Add Strength Workout</Button>
-            <Button variant="contained" color="secondary" onClick={() => handleOpenNameModal(false)} sx={{ ml: 2 }} className='primary-button'>
-              Save Strength Workout
-            </Button>
-            <Button
+              <Button variant="contained" color="primary" onClick={handleOpenStrengthModal} sx={{ ml: 2 }} className='primary-button'>
+                Add Strength Workout</Button>
+              <Button variant="contained" color="secondary" onClick={() => handleOpenNameModal(false)} sx={{ ml: 2 }} className='primary-button'>
+                Save Strength Workout
+              </Button>
+              <Button
                 variant="contained"
                 onClick={handleLoadUserWorkouts} // load button added here.
                 sx={{ ml: 2 }}
@@ -421,39 +421,7 @@ const WorkoutPage: React.FC = () => {
       </Grid>
 
       {strengthModal}
-
-        <Grid item xs={12} md={4}>
-          <Paper
-            sx={{
-              p: 2,
-              display: 'flex',
-              flexDirection: 'column',
-              width: '30%',
-              height: '100%',
-              borderRadius: 10,
-              marginTop: 5,
-            }}
-          >
-            <Typography variant="subtitle1" color="text.secondary">
-              Last logged weight
-            </Typography>
-            <Typography variant="body2">Wed, Feb 13, 2025</Typography>
-
-            <Typography variant="h2" sx={{ mt: 2, mb: 1, fontWeight: 'bold' }}>
-              211.5 lbs
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Goal: 200 lbs
-            </Typography>
-
-            <Box sx={{ mt: 'auto' }}>
-                <Button variant="contained" color="primary" className="primary-button">
-                Log New Weight
-                </Button>
-            </Box>
-          </Paper>
-        </Grid>
-        <Snackbar
+      <Snackbar
         open={openSnackbar}
         autoHideDuration={6000}
         onClose={handleCloseSnackbar}
