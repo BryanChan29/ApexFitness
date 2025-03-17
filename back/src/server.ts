@@ -42,6 +42,9 @@ const db = await open({
 });
 await db.get('PRAGMA foreign_keys = ON');
 
+let reactAssetsPath = path.join(__dirname, "../front/dist");
+app.use(express.static(reactAssetsPath));
+
 const tokenStorage: { [key: string]: string } = {};
 function makeToken() {
   return crypto.randomBytes(32).toString('hex');
@@ -1391,8 +1394,12 @@ app.delete('/api/meals/:meal_id', async (req, res) => {
   }
 });
 
+app.get("*", (req, res) => {
+  return res.sendFile("index.html", { root: reactAssetsPath });
+});
+
 // run server
-let port = 3000;
+let port = 3001;
 let host = 'localhost';
 let protocol = 'http';
 
